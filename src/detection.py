@@ -15,7 +15,7 @@ for subdir, dirs, files in os.walk(rootdir):
             before = cv2.imread(os.path.join(subdir, file))
             after = cv2.imread(os.path.join(subdir, re.sub('Before', 'After', file)))
 
-            diff = cv2.subtract(before, after)
+            diff = cv2.absdiff(before, after)
             grayscale = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
             blurred = cv2.medianBlur(grayscale, 5)
 
@@ -30,11 +30,7 @@ for subdir, dirs, files in os.walk(rootdir):
             adaptiveMeanThresh = cv2.adaptiveThreshold(inverted, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 5)
             adaptiveGaussThresh = cv2.adaptiveThreshold(inverted, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5)
 
-            # Morphological operations to remove noise
-            # kernelOpen = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,3))
-            # kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,9))
-            # morphological = cv2.morphologyEx(adaptiveGaussThresh, cv2.MORPH_OPEN, kernelOpen)
-            # closed = cv2.morphologyEx(morphological, cv2.MORPH_CLOSE, kernelClose)
+            
 
             triangle = threshold_triangle(norm_img1)
             yen = threshold_yen(norm_img1)
@@ -63,19 +59,33 @@ for subdir, dirs, files in os.walk(rootdir):
                     + cv2.normalize(triangle, all, 0, 25, cv2.NORM_MINMAX)\
                     + cv2.normalize(li, all, 0, 25, cv2.NORM_MINMAX)
 
-            ret, all = cv2.threshold(all, 76, 255, cv2.THRESH_BINARY)
+            ret, all = cv2.threshold(all, 101, 255, cv2.THRESH_BINARY)
+
+            # Morphological operations to remove noise
+            kernelOpen = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
+            kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,7))
+            morphological = cv2.morphologyEx(all, cv2.MORPH_OPEN, kernelOpen)
+            final = cv2.morphologyEx(all, cv2.MORPH_CLOSE, kernelClose)
 
             # Find the lowest y point of the max size contour
-            contours, hierarchy = cv2.findContours(all, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(final, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             cnt = max(contours, key = cv2.contourArea)
-            lowest = tuple(cnt[cnt[:, :, 1].argmax()][0])
-            after = cv2.circle(after, lowest, radius=5, color=(0, 0, 255), thickness=-1)
 
-            rows,cols = all.shape[:2]
+            blank = np.zeros(img.shape, dtype=np.uint8)
+
+            rows,cols = img.shape[:2]
             [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
             lefty = int((-x*vy/vx) + y)
             righty = int(((cols-x)*vy/vx)+y)
-            cv2.line(after,(cols-1,righty),(0,lefty),(0,255,0),2)
+            cv2.line(blank,(cols-1,righty),(0,lefty),(255,255,255),5)
+
+            blank = cv2.bitwise_and(blank, final)
+            y, x = np.nonzero(blank)
+            y = y[-1]
+            x = x[-1]
+            print(x, y)
+            # lowest = tuple(cnt[cnt[:, :, 1].argmax()][0])
+            after = cv2.circle(after, (x,y), radius=2, color=(0, 0, 255), thickness=-1)
 
             # Plot the results
             ax1 = plt.subplot(3, 5, 1)
@@ -87,12 +97,12 @@ for subdir, dirs, files in os.walk(rootdir):
             ax2.title.set_text('Difference')
 
             ax3 = plt.subplot(3, 5, 3, sharex=ax1, sharey=ax1)
-            ax3.imshow(cv2.cvtColor(grayscale, cv2.COLOR_BGR2RGB))
-            ax3.title.set_text('Grayscale')
+            ax3.imshow(cv2.cvtColor(final, cv2.COLOR_BGR2RGB))
+            ax3.title.set_text('Final')
 
             ax4 = plt.subplot(3, 5, 4, sharex=ax1, sharey=ax1)
-            ax4.imshow(cv2.cvtColor(blurred, cv2.COLOR_BGR2RGB))
-            ax4.title.set_text('Blurred')
+            ax4.imshow(cv2.cvtColor(blank, cv2.COLOR_BGR2RGB))
+            ax4.title.set_text('Line')
 
             ax5 = plt.subplot(3, 5, 5, sharex=ax1, sharey=ax1)
             ax5.imshow(cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB))
@@ -137,5 +147,8 @@ for subdir, dirs, files in os.walk(rootdir):
             ax11 = plt.subplot(3, 5, 15, sharex=ax1, sharey=ax1)
             ax11.imshow(cv2.cvtColor(isodata, cv2.COLOR_BGR2RGB))
             ax11.title.set_text('Isodata')
+
+            # ax1.set_xlim([x-40, x+40])
+            # ax1.set_ylim([y+40, y-40])
 
             plt.show()
