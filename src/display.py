@@ -2,18 +2,28 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge
 import math
 
-def findAngle(xPos, img, fov, center):
-    height, width, layers = img.shape
+def findAngle(xPos, width, fov):
+    x = xPos - width/2
 
-    # fromCenter = xPos - (width/2)
-    fromCenter = xPos - center
-    ratio = fromCenter/width
+    angle = math.atan((2*x*math.tan(math.radians(fov/2)))/(width))
+    angle = math.degrees(angle)
+    
+    return angle
 
-    angle = (ratio * fov)
+def findCenterAngle(centerPos, width, fov):
 
+    x = centerPos - width/2
+
+    angle = math.atan((2*x*math.tan(math.radians(fov/2)))/(width))
+    angle = math.degrees(angle)
+    
     return angle
 
 def angleToGradient(angle):
+    angle += 9
+
+    if angle == 0:
+        slope = 0
     if angle < 0:
         slope = 1
     if angle > 0:
@@ -31,8 +41,9 @@ def rotateGradient(gradient):
 
 class Dartboard():
     def __init__(self, title):
-        # self.fig, self.ax = plt.subplots(1, 2, 1)
-        self.ax = plt.subplot(1, 3, 1)
+        # self.fig, self.ax = plt.subplots()
+        # self.ax = plt.subplot(1, 3, 1)
+        self.ax = plt.subplot(2, 4, 1)
 
         # Set dimensions and force aspect ratio to be square
         self.ax.set_xlim([-350, 350])
@@ -41,7 +52,7 @@ class Dartboard():
         plt.gca().set_aspect('equal')
 
         # self.fig.suptitle(title)
-        self.ax.title.set_text(title)
+        # self.ax.title.set_text(title)
 
         self.drawBoard()
 
@@ -90,15 +101,22 @@ class Dartboard():
 
     def show(self):
         plt.show()
+
+    def save(self):
+        plt.axis('off')
+        self.fig.savefig('board.png', bbox_inches='tight', pad_inches=0, dpi=300)
     
     def close(self):
         plt.close()
 
-    def drawPoint(self, xPos, yPos):
-        self.ax.plot(xPos, yPos, color='magenta', marker='x')
+    def drawPoint(self, xPos, yPos, color='magenta'):
+        self.ax.plot(xPos, yPos, color=color, marker='x')
 
-    def drawLine(self, xPos, yPos, gradient):
-        self.ax.axline((xPos, yPos), (xPos+10, yPos-10*gradient), linewidth=1, color='cyan')
+    def drawLine(self, xPos, yPos, gradient, color='cyan'):
+        if gradient == math.inf:
+            self.ax.axline((xPos, yPos), (xPos, yPos-10), linewidth=1, color=color)
+        else:
+            self.ax.axline((xPos, yPos), (xPos+10, yPos-10*gradient), linewidth=1, color=color)
 
     def intersect(self, xPos1, yPos1, gradient1, xPos2, yPos2, gradient2):
         yPos1 = -yPos1
@@ -112,7 +130,7 @@ class Dartboard():
 
         self.drawPoint(x, -y)
 
-        return (x, y)
+        return (x, -y)
 
     def cartesianToPolar(self, x, y):
         r = math.sqrt(x**2 + y**2)
@@ -130,19 +148,19 @@ class Dartboard():
         value = str(sectors[sector])
 
         if 170 < r:
-            pass
+            return("MISS")
         elif 162 < r:
-            print('Double ' + value)
+            return('D' + value)
         elif 107 < r:
-            print('Single ' + value)
+            return('S' + value)
         elif 99 < r:
-            print('Tripple ' + value)
+            return('T' + value)
         elif 16 < r:
-            print('Single ' + value)
+            return('S' + value)
         elif 6.35 < r:
-            print('Outer Bull')
+            return('S25')
         else:
-            print('Inner Bull')
+            return('D25')
 
 # topRatio = 0.10304878048780487
 # sideRatio = 0.46463414634146344

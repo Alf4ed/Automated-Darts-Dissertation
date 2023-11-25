@@ -1,15 +1,18 @@
 import numpy as np
-import cv2, time
+import cv2, os
 
 video_capture_1 = cv2.VideoCapture(0)
 video_capture_2 = cv2.VideoCapture(1)
-video_capture_3 = cv2.VideoCapture(3)
+video_capture_3 = cv2.VideoCapture(2)
 
 ret1, frame1 = video_capture_1.read()
 height, width, layers = frame1.shape
 resizeHeight = int(height/1.5)
 resizeWidth = int(width/1.5)
 before = cv2.resize(frame1, (resizeWidth, resizeHeight))
+
+number = 25
+region = ['S1', 'S2', 'S3', 'S4', 'D1', 'D2', 'D3', 'D4', 'empty1', 'empty2', 'calib1', 'calib2', 'calib3']
 
 while True:
     # Capture frame-by-frame
@@ -39,10 +42,18 @@ while True:
     if k == ord('q'):
         break
     if k == ord('s'):
-        timestr = time.strftime('%d%m-%H%M%S')
-        cv2.imwrite(timestr + 'frame1.jpg', frame1)
-        cv2.imwrite(timestr + 'frame2.jpg', frame2)
-        cv2.imwrite(timestr + 'frame3.jpg', frame3)
+
+        reg = (number-25)
+        num = 25
+
+        os.mkdir('dataset/'+region[reg]+str(num))
+
+        cv2.imwrite('dataset/'+region[reg]+str(num)+'/A.jpg', frame1)
+        cv2.imwrite('dataset/'+region[reg]+str(num)+'/B.jpg', frame2)
+        cv2.imwrite('dataset/'+region[reg]+str(num)+'/C.jpg', frame3)
+
+        print(region[reg]+str(num))
+        number += 1
 
 # When everything is done, release the capture
 video_capture_1.release()
