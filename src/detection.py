@@ -1,26 +1,23 @@
 import cv2, numpy as np
 from matplotlib import pyplot as plt
 import os, re
-from skimage import data, img_as_ubyte
 from skimage.filters import threshold_isodata, threshold_li, threshold_minimum, threshold_yen, threshold_triangle, threshold_otsu
 from display import *
-import math
+import math, time
 
-def findDartTip(before, after, go, threshVal, colour):
+def findDartTip(before, after, threshVal):
     diff = cv2.absdiff(before, after)
     grayscale = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.medianBlur(grayscale, 5)
+    blurred = cv2.medianBlur(grayscale, 3)
 
     # Normalise
-    norm_img1 = cv2.normalize(blurred, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    norm_img1 = (255*norm_img1).astype(np.uint8)
-    # inverted = 255 - norm_img1
+    # norm_img1 = cv2.normalize(blurred, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    # norm_img1 = (255*norm_img1).astype(np.uint8)
+    norm_img1 = blurred
 
     # # Thresholding operations
     ret, thresh = cv2.threshold(norm_img1, threshVal, 255, cv2.THRESH_BINARY)
     # ret3,otsuCV = cv2.threshold(norm_img1, 200, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    # adaptiveMeanThresh = cv2.adaptiveThreshold(inverted, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 5)
-    # adaptiveGaussThresh = cv2.adaptiveThreshold(inverted, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 5)
 
     # triangle = threshold_triangle(norm_img1)
     # yen = threshold_yen(norm_img1)
@@ -35,189 +32,166 @@ def findDartTip(before, after, go, threshVal, colour):
     # ret, otsu = cv2.threshold(norm_img1, otsu, 255, cv2.THRESH_BINARY)
     # ret, isodata = cv2.threshold(norm_img1, isodata, 255, cv2.THRESH_BINARY)
 
-    # thresh = isodata
-
-    img = thresh
-
-    # all = np.zeros(img.shape)
-    # all = cv2.normalize(255 - adaptiveMeanThresh, all, 0, 25, cv2.NORM_MINMAX)\
-    # all = cv2.normalize(yen, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(otsuCV, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(min, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(otsu, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(isodata, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(thresh, all, 0, 25, cv2.NORM_MINMAX)\
-    #         + cv2.normalize(li, all, 0, 25, cv2.NORM_MINMAX)
-            # + cv2.normalize(255 - adaptiveGaussThresh, all, 0, 25, cv2.NORM_MINMAX)\
-            # + cv2.normalize(triangle, all, 0, 25, cv2.NORM_MINMAX)\
-            
-
     # ret, all = cv2.threshold(all, 101, 255, cv2.THRESH_BINARY)
-    all = thresh
 
     # Morphological operations to remove noise
     kernelOpen = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
-    kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,7))
-    morphological = cv2.morphologyEx(all, cv2.MORPH_OPEN, kernelOpen)
+    kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
+    morphological = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
     final = cv2.morphologyEx(morphological, cv2.MORPH_CLOSE, kernelClose)
-    out = final
-    # final = thresh
 
     # Find the lowest y point of the max size contour
     contours, hierarchy = cv2.findContours(final, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt = max(contours, key = cv2.contourArea)
-
-    blank = np.zeros(img.shape, dtype=np.uint8)
-
-    rows,cols = img.shape[:2]
-    [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
-    lefty = int(((-x*vy/vx) + y)[0])
-    righty = int((((cols-x)*vy/vx)+y)[0])
-    cv2.line(blank,(cols-1,righty),(0,lefty),(255,255,255),15)
-
-    blank = cv2.bitwise_and(blank, final)
-    y, x = np.nonzero(blank)
-    y = y[-1]
-    x = x[-1]
     
-    # lowest = tuple(cnt[cnt[:, :, 1].argmax()][0])
-    final = cv2.cvtColor(after, cv2.COLOR_BGR2RGB)
-    final = cv2.circle(after, (x,y), radius=2, color=colour, thickness=-1)
+    val = 0
 
-    # Plot the results
-    ax1 = plt.subplot(2, 4, 2+(2*go))
-    ax1.imshow(cv2.cvtColor(after, cv2.COLOR_BGR2RGB))
-    ax1.title.set_text('After')
+    if len(contours) == 0:
+        val =  0
+    else:
+        cnt = max(contours, key = cv2.contourArea)
+        size = cv2.contourArea(cnt)
 
-    # ax2 = plt.subplot(2, 4, 3+(2*go), sharex=ax1, sharey=ax1)
-    # ax2.imshow(cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB))
-    # ax2.title.set_text('Thresh')
+        if size > 3000:
+            val = "Hand"
+        elif size < 25:
+            val =  0
+        else:
+            val =  tuple(cnt[cnt[:, :, 1].argmax()][0])
 
-    ax3 = plt.subplot(2, 4, 3+(2*go), sharex=ax1, sharey=ax1)
-    # ax3.imshow(cv2.cvtColor(final, cv2.COLOR_BGR2RGB))
-    ax3.imshow(out)
-    ax3.title.set_text('Final')
+    # blank = np.zeros(img.shape, dtype=np.uint8)
 
-    # ax4 = plt.subplot(2, 2, 3, sharex=ax1, sharey=ax1)
-    # ax4.imshow(cv2.cvtColor(blank, cv2.COLOR_BGR2RGB))
-    # ax4.title.set_text('Line')
+    # rows,cols = img.shape[:2]
+    # [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
+    # lefty = int(((-x*vy/vx) + y)[0])
+    # righty = int((((cols-x)*vy/vx)+y)[0])
+    # cv2.line(blank,(cols-1,righty),(0,lefty),(255,255,255),15)
 
-    # ax5 = plt.subplot(3, 5, 5, sharex=ax1, sharey=ax1)
-    # ax5.imshow(cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB))
-    # ax5.title.set_text('Global')
+    # blank = cv2.bitwise_and(blank, final)
+    # y, x = np.nonzero(blank)
+    # y = y[-1]
+    # x = x[-1]
 
-    # ax6 = plt.subplot(3, 5, 6, sharex=ax1, sharey=ax1)
-    # ax6.imshow(cv2.cvtColor(otsuCV, cv2.COLOR_BGR2RGB))
-    # ax6.title.set_text('OtsuCV')
+    return cv2.cvtColor(final, cv2.COLOR_GRAY2BGR ), val
 
-    # ax7 = plt.subplot(3, 5, 7, sharex=ax1, sharey=ax1)
-    # ax7.imshow(cv2.cvtColor(255 - adaptiveMeanThresh, cv2.COLOR_BGR2RGB))
-    # ax7.title.set_text('Mean')
+fov = 67.5
 
-    # ax8 = plt.subplot(3, 5, 8, sharex=ax1, sharey=ax1)
-    # ax8.imshow(cv2.cvtColor(255 - adaptiveGaussThresh, cv2.COLOR_BGR2RGB))
-    # ax8.title.set_text('Gaussian')
+aCenter = findCenterAngle(320, 640, fov)
+bCenter = findCenterAngle(320, 640, fov)
+cCenter = findCenterAngle(320, 640, fov)
 
-    # ax10 = plt.subplot(2, 4, 3+(2*go), sharex=ax1, sharey=ax1)
-    # ax10.imshow(cv2.cvtColor(norm_img1, cv2.COLOR_BGR2RGB))
-    # ax10.title.set_text('Normalised')
+aCameraX = -335*math.cos(math.radians(27))
+aCameraY = 335*math.sin(math.radians(27))
 
-    # ax10 = plt.subplot(3, 5, 10, sharex=ax1, sharey=ax1)
-    # ax10.imshow(cv2.cvtColor(triangle, cv2.COLOR_BGR2RGB))
-    # ax10.title.set_text('Triangle')
+bCameraX = 335*math.cos(math.radians(27))
+bCameraY = 335*math.sin(math.radians(27))
 
-    # ax10 = plt.subplot(3, 5, 11, sharex=ax1, sharey=ax1)
-    # ax10.imshow(cv2.cvtColor(yen, cv2.COLOR_BGR2RGB))
-    # ax10.title.set_text('Yen')
+cCameraX = 335*math.cos(math.radians(81))
+cCameraY = -335*math.sin(math.radians(81))
 
-    # ax11 = plt.subplot(3, 5, 12, sharex=ax1, sharey=ax1)
-    # ax11.imshow(cv2.cvtColor(li, cv2.COLOR_BGR2RGB))
-    # ax11.title.set_text('Li')
+# board = Dartboard('Darboard')
 
-    # ax10 = plt.subplot(3, 5, 13, sharex=ax1, sharey=ax1)
-    # ax10.imshow(cv2.cvtColor(min, cv2.COLOR_BGR2RGB))
-    # ax10.title.set_text('Min')
+# board.drawPoint(aCameraX, aCameraY, 'r')
+# board.drawPoint(bCameraX, bCameraY, 'g')
+# board.drawPoint(cCameraX, cCameraY, 'b')
 
-    # ax10 = plt.subplot(2, 2, 4, sharex=ax1, sharey=ax1)
-    # ax10.imshow(cv2.cvtColor(all, cv2.COLOR_BGR2RGB))
-    # ax10.title.set_text('All')
+# board.show()
 
-    # ax11 = plt.subplot(3, 5, 15, sharex=ax1, sharey=ax1)
-    # ax11.imshow(cv2.cvtColor(isodata, cv2.COLOR_BGR2RGB))
-    # ax11.title.set_text('Isodata')
+video_capture_1 = cv2.VideoCapture(2)
+video_capture_2 = cv2.VideoCapture(3)
+video_capture_3 = cv2.VideoCapture(1)
 
-    # ax1.set_xlim([x-60, x+60])
-    # ax1.set_ylim([y+50, max(0,y-300)])
+oldFrameA = None
+oldFrameB = None
+oldFrameC = None
 
-    # plt.show()
+detectAgain = False
 
-    return(x, y)
+while True:
+    # Capture frame-by-frame
+    ret1, frame1 = video_capture_1.read()
+    ret2, frame2 = video_capture_2.read()
+    ret3, frame3 = video_capture_3.read()
 
-fov = 70
+    height, width, layers = frame1.shape
+    resizeHeight = int(height/1.5)
+    resizeWidth = int(width/1.5)
 
-aCenter = findCenterAngle(319, 640, fov)
-bCenter = findCenterAngle(326, 640, fov)
-cCenter = findCenterAngle(327, 640, fov)
+    resFrame1 = cv2.resize(frame1, (resizeWidth, resizeHeight))
+    resFrame2 = cv2.resize(frame2, (resizeWidth, resizeHeight))
+    resFrame3 = cv2.resize(frame3, (resizeWidth, resizeHeight))
 
-# print(findAngle(132, 640, fov)-aCenter)
-# print(findAngle(436, 640, fov)-aCenter)
-# print(findAngle(532, 640, fov)-aCenter)
+    resFrame1 = resFrame1[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
+    resFrame2 = resFrame2[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
+    resFrame3 = resFrame3[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
 
-aCameraX = -(335)*math.sin(math.radians(13.2))
-aCameraY = -(335)*math.cos(math.radians(13.2))
-bCameraX = -(335)*math.sin(math.radians(52.8))
-bCameraY = (335)*math.cos(math.radians(52.8))
-cCameraX = (335)*math.sin(math.radians(27.5))
-cCameraY = (335)*math.cos(math.radians(27.5))
+    if oldFrameA is not None:
+        aImg, aX = findDartTip(oldFrameA, resFrame1, 20)
+        bImg, bX = findDartTip(oldFrameB, resFrame2, 20)
+        cImg, cX = findDartTip(oldFrameC, resFrame3, 20)
 
-rootdir = 'C:/Users/alfre/Documents/cs310/src/dataset/'
+        if aX == 0 and bX == 0 and cX == 0:
+            detectAgain = False
+        elif detectAgain == False:
+            detectAgain = True
+        elif detectAgain == True:
+            if aX == "Hand" or bX == "Hand" or cX == "Hand":
+                print("CHANGEOVER")
+            else:
+                guess = Dartboard("Dartboard")
+                guess.drawPoint(aCameraX, aCameraY, color='r')
+                guess.drawPoint(bCameraX, bCameraY, color='g')
+                guess.drawPoint(cCameraX, cCameraY, color='b')
 
-for subdir, dirs, files in os.walk(rootdir):
-    if re.search("25", subdir):
-        for file in files:
-            
-            if re.search("A", file) is not None:
-                print(subdir)
-                board = Dartboard(subdir)
-                board.drawPoint(aCameraX, aCameraY, color='r')
-                board.drawPoint(bCameraX, bCameraY, color='g')
-                board.drawPoint(cCameraX, cCameraY, color='b')
+                aGrad = angleToGradient(findAngle(aX[0], resizeWidth, fov) - aCenter - 27)
+                bGrad = angleToGradient(findAngle(bX[0], resizeWidth, fov) - bCenter + 27)
+                cGrad = rotateGradient90(angleToGradient(findAngle(cX[0], resizeWidth, fov) - cCenter + 9))
 
-                aBefore = cv2.imread('C:/Users/alfre/Documents/cs310/src/dataset/empty125/_A.jpg')
-                bBefore = cv2.imread('C:/Users/alfre/Documents/cs310/src/dataset/empty125/_B.jpg')
-                cBefore = cv2.imread('C:/Users/alfre/Documents/cs310/src/dataset/empty125/_C.jpg')
+                guess.drawLine(aCameraX, aCameraY, aGrad, color='r')
+                guess.drawLine(bCameraX, bCameraY, bGrad, color='g')
+                guess.drawLine(cCameraX, cCameraY, cGrad, color='b')
 
-                aAfter = cv2.imread(os.path.join(subdir, '_A.jpg'))
-                bAfter = cv2.imread(os.path.join(subdir, '_B.jpg'))
-                cAfter = cv2.imread(os.path.join(subdir, '_C.jpg'))
+                pointA = guess.intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad)
+                pointB = guess.intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad)
+                pointC = guess.intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad)
 
-                aX, _ = findDartTip(aBefore, aAfter, 0, 65, (0, 0, 255))
-                bX, _ = findDartTip(bBefore, bAfter, 1, 50, (0, 255, 0))
-                cX, _ = findDartTip(cBefore, cAfter, 2, 50, (255, 0, 0))
+                xAvg = (pointA[0]+pointB[0]+pointC[0])/3
+                yAvg = (pointA[1]+pointB[1]+pointC[1])/3
 
-                aGrad = angleToGradient(findAngle(aX, 640, fov) - aCenter + 68)
-                bGrad = angleToGradient(findAngle(bX, 640, fov) - bCenter - 46)
-                cGrad = angleToGradient(findAngle(cX, 640, fov) - cCenter - 127)
+                r, theta = guess.cartesianToPolar(xAvg, yAvg)
 
-                board.drawLine(aCameraX, aCameraY, aGrad, color='r')
-                board.drawLine(bCameraX, bCameraY, bGrad, color='g')
-                board.drawLine(cCameraX, cCameraY, cGrad, color='b')
+                print(guess.score(r, theta))
 
-                x1, y1 = board.intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad)
-                x2, y2 = board.intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad)
-                x3, y3 = board.intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad)
+                guess.close()
 
-                avX = (x1+x2+x3)/3
-                avY = (y1+y2+y3)/3
+            detectAgain = False
 
-                board.drawPoint(avX, avY, 'cyan')
+        imageA = resFrame1.copy()
+        imageB = resFrame2.copy()
+        imageC = resFrame3.copy()
 
-                r, theta = board.cartesianToPolar(avX, avY)
-                score = board.score(r, theta)
+        if type(aX) == tuple and type(bX) == tuple and type(cX) == tuple:
+            imageA = cv2.circle(imageA, aX, 5, (255, 0, 0), -1)
+            imageB = cv2.circle(imageB, bX, 5, (255, 0, 0), -1)
+            imageC = cv2.circle(imageC, cX, 5, (255, 0, 0), -1)
 
-                print(score)
+        processed = np.hstack([aImg, bImg, cImg])
+        horizontal = np.hstack([imageA, imageB, imageC])
 
-                # if re.search(score, subdir) is None:
-                board.show()
+        all = np.vstack([horizontal, processed])
+        cv2.imshow('Dartboard', all)
+    
+    if oldFrameA is None or detectAgain == False:
+        oldFrameA = resFrame1
+        oldFrameB = resFrame2
+        oldFrameC = resFrame3
 
-                board.close()
+    k = cv2.waitKey(500)
+    if k == ord('q'):
+        break
+
+# When everything is done, release the capture
+video_capture_1.release()
+video_capture_2.release()
+video_capture_3.release()
+cv2.destroyAllWindows()
+

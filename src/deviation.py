@@ -1,16 +1,7 @@
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import math
 import scipy.stats as st
-
-heat = np.zeros((460, 460))
-
-# board = Dartboard('Deviation')
-img = cv2.imread('../images/board.png')
-
-fig, ax = plt.subplots()
-ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), extent=[-230, 230, 230, -230])
 
 def cartesianToPolar(x, y):
     r = math.sqrt(x**2 + y**2)
@@ -27,6 +18,9 @@ def cartesianToPolar(x, y):
     return (r, theta)
 
 def score(r, theta):
+
+    r, theta = cartesianToPolar(r-180, theta-180)
+
     sectors = [3,17,2,15,10,6,13,4,18,1,20,5,12,9,14,11,8,16,7,19]
     sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
     value = int(sectors[sector])
@@ -46,56 +40,44 @@ def score(r, theta):
     else:
         return 50
 
-std = 50
-middle = 230
+import numpy as np
+from scipy.stats import norm
 
-probabilities = np.zeros((460, 460))
-scores = np.zeros((460, 460))
+def expectation_matrix(sd):
+    # Values used to approximate integral
+    values = np.arange(0, 361)
+    
+    # Compute values of 2D normal density at approximating points
+    density_matrix = np.outer(norm.pdf(values, 0, sd), norm.pdf(values, 0, sd))
+    
+    # Compute scores at approximating points
+    score_matrix = np.fromfunction(np.vectorize(lambda x, y: score(x, y)), (361, 361))
 
-from statistics import NormalDist
+    plt.imshow(score_matrix)
+    plt.show()
+    
+    # Pad with zeros on all sides
+    score_matrix = np.pad(score_matrix, ((361, 361), (361, 361)), mode='constant', constant_values=0)
+    
+    # Matrix to hold expected values
+    expectation_matrix = np.zeros((361, 361))
+    
+    # Sweep distribution matrix over the board
+    for i in range(361):
+        for j in range(361):
+            # Which subset of the score matrix to multiply with the density
+            score_matrix_subset = score_matrix[i + 361 + values, j + 361 + values]
+            
+            # Contribution to expected value at approximating point
+            contrib = np.sum(score_matrix_subset * density_matrix)
+            expectation_matrix[i, j] = contrib
+    
+    return expectation_matrix
 
-for i in range(-230, 230):
-    for j in range(-230, 230):
-        
-        r, theta = cartesianToPolar(i+0.5, j+0.5)
-        scores[i+230][j+230] = score(r, theta)
+# Example usage with a standard deviation of 1.0
+result_matrix = expectation_matrix(15.0)
 
-        lowerDist = math.sqrt(abs(i)**2 + abs(j)**2)
-        upperDist = math.sqrt(abs(i+1)**2 + abs(j+1)**2)
-
-        lower = NormalDist(0, 50).cdf(math.sqrt(abs(i)**2 + abs(j)**2))
-        upper = NormalDist(0, 50).cdf(math.sqrt((abs(i)+1)**2 + (abs(j)+1)**2))
-
-        probabilities[i+230][j+230] = upper-lower
-
-
-
-
-
-for i in range(0, 460):
-    for j in range(0, 460):
-        
-        blank = np.zeros((460, 460))
-
-        # left = max(0, 230-i)
-        # right = min(460, 460-i)
-        # top = max(0, 230-j)
-        # bottom = min(460, 460-j)
-
-        # overlap = probabilities[left:right, top:bottom]
-
-        # rowLeft = max(0, i-230)
-        # rowRight = min(460, 230+i)
-        # columnTop = max(0, j-230)
-        # columnBottom = min(460, 230+j)
-
-        # blank[rowLeft:rowRight, columnTop:columnBottom] = overlap
-
-        # products = np.multiply(blank, scores)
-        # total = np.sum(products)
-
-        heat[i][j] = 2
-
-ax.imshow(scores, alpha=1, cmap='hot', extent=[-230, 230, 230, -230])
+plt.imshow(result_matrix)
+plt.show()
 
 plt.show()

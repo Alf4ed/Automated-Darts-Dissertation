@@ -20,7 +20,6 @@ def findCenterAngle(centerPos, width, fov):
     return angle
 
 def angleToGradient(angle):
-    angle += 9
 
     if angle == 0:
         slope = 0
@@ -36,14 +35,13 @@ def angleToGradient(angle):
     
     return gradient
 
-def rotateGradient(gradient):
-    return -1 * (1/gradient)
+def rotateGradient90(gradient):
+    return -(1/gradient)
 
 class Dartboard():
-    def __init__(self, title):
-        # self.fig, self.ax = plt.subplots()
-        # self.ax = plt.subplot(1, 3, 1)
-        self.ax = plt.subplot(2, 4, 1)
+    def __init__(self, title, cBlack, cWhite, cRed, cGreen):
+        self.fig, self.ax = plt.subplots()
+        # self.ax = plt.subplot(2, 4, 1)
 
         # Set dimensions and force aspect ratio to be square
         self.ax.set_xlim([-350, 350])
@@ -51,30 +49,51 @@ class Dartboard():
         self.ax.set_box_aspect(1)
         plt.gca().set_aspect('equal')
 
-        # self.fig.suptitle(title)
+        # Set background color
+        # self.ax.set_facecolor(cBlack)
+        # plt.figure(facecolor=cBlack)
+
         # self.ax.title.set_text(title)
 
-        self.drawBoard()
+        self.drawBoard(cRed, cGreen)
 
-        self.ax.add_patch(self.foam)
-        self.ax.add_patch(self.board)
+        # self.ax.add_patch(self.foam)
+        # self.ax.add_patch(self.board)
 
-        self.drawSector(170, 'g', 'r')
-        self.drawSector(162, 'w', 'k')
-        self.drawSector(107, 'g', 'r')
-        self.drawSector(99, 'w', 'k')
+        self.drawSector(170, cGreen, cRed)
+        self.drawSector(162, cWhite, cBlack)
+        self.drawSector(107, cGreen, cRed)
+        self.drawSector(99, cWhite, cBlack)
 
         self.drawRadius()
 
         self.ax.add_patch(self.outerBull)
         self.ax.add_patch(self.innerBull)
 
-    def drawBoard(self):
+        self.addText()
+
+    def addText(self):
+        sectors = ['10','15','2','17','3','19','7','16','8','11','14','9','12','5','20','1','18','14','13','6']
+
+        for i in range(0, 20):
+            x = math.cos((18/180)*math.pi + 2*math.pi/20*i)*200
+            y = math.sin((18/180)*math.pi + 2*math.pi/20*i)*200
+
+            plt.text(x, y, sectors[i], horizontalalignment='center',
+                     verticalalignment='center', fontsize=14, color='#CCCCCC')
+    
+    def getFig(self):
+        plt.axis('off')
+        self.ax.set_xlim([-230, 230])
+        self.ax.set_ylim([230, -230])
+        return self.fig
+    
+    def drawBoard(self, cRed, cGreen):
         # Board parts
-        self.foam = plt.Circle((0, 0), 337.5, color='gray')
-        self.board = plt.Circle((0,0), 225.5, color='k')
-        self.outerBull = plt.Circle((0,0), 16, color='g')
-        self.innerBull = plt.Circle((0,0), 6.35, color='r')
+        # self.foam = plt.Circle((0, 0), 337.5, color='gray')
+        # self.board = plt.Circle((0,0), 225.5, color='k')
+        self.outerBull = plt.Circle((0,0), 16, color=cGreen)
+        self.innerBull = plt.Circle((0,0), 6.35, color=cRed)
 
     def drawSector(self, radius, color1, color2):
         for i in range(0, 20):
@@ -109,14 +128,17 @@ class Dartboard():
     def close(self):
         plt.close()
 
+    def savefig(self, filename):
+        plt.savefig(filename, dpi=400)
+
     def drawPoint(self, xPos, yPos, color='magenta'):
         self.ax.plot(xPos, yPos, color=color, marker='x')
 
-    def drawLine(self, xPos, yPos, gradient, color='cyan'):
+    def drawLine(self, xPos, yPos, gradient, color='cyan', linestyle='solid'):
         if gradient == math.inf:
-            self.ax.axline((xPos, yPos), (xPos, yPos-10), linewidth=1, color=color)
+            self.ax.axline((xPos, yPos), (xPos, yPos-10), linewidth=1, color=color, linestyle=linestyle)
         else:
-            self.ax.axline((xPos, yPos), (xPos+10, yPos-10*gradient), linewidth=1, color=color)
+            self.ax.axline((xPos, yPos), (xPos+10, yPos-10*gradient), linewidth=1, color=color, linestyle=linestyle)
 
     def intersect(self, xPos1, yPos1, gradient1, xPos2, yPos2, gradient2):
         yPos1 = -yPos1
@@ -130,7 +152,7 @@ class Dartboard():
 
         self.drawPoint(x, -y)
 
-        return (x, -y)
+        return (x, y)
 
     def cartesianToPolar(self, x, y):
         r = math.sqrt(x**2 + y**2)
@@ -161,16 +183,3 @@ class Dartboard():
             return('S25')
         else:
             return('D25')
-
-# topRatio = 0.10304878048780487
-# sideRatio = 0.46463414634146344
-
-# fov = 175
-
-# topAngle = math.radians(fov*topRatio)
-# sideAngle = math.radians(fov*sideRatio)
-
-# fromTop(10, -310 + 10*math.sin(topAngle)/math.cos(topAngle))
-# fromSide(-310, -10*math.sin(sideAngle)/math.cos(sideAngle))
-
-# plt.show()
