@@ -3,22 +3,23 @@ from scipy import signal
 from scipy.stats import skewnorm
 import matplotlib.pyplot as plt
 import math
+from display import cartesianToPolar
 
-def cartesianToPolar(x, y):
-    r = math.sqrt(x**2 + y**2)
+# def cartesianToPolar(x, y):
+#     r = math.sqrt(x**2 + y**2)
 
-    if x == 0 and y >= 0:
-        theta = math.pi/2
-    elif x == 0 and y < 0:
-        theta = math.pi*3/2
-    elif x > 0:
-        theta = math.atan(y/x)
-    else:
-        theta = math.atan(y/x) + math.pi
+#     if x == 0 and y >= 0:
+#         theta = math.pi/2
+#     elif x == 0 and y < 0:
+#         theta = math.pi*3/2
+#     elif x > 0:
+#         theta = math.atan(y/x)
+#     else:
+#         theta = math.atan(y/x) + math.pi
     
-    return (r, theta)
+#     return (r, theta)
 
-def score(x, y, check, checkout=False):
+def scoreProb(x, y, check, checkout=False):
 
     r, theta = cartesianToPolar(x, y)
 
@@ -76,13 +77,13 @@ def createKernel(size, dataX=None, dataY=None):
     return x, y
 
 # kernel, xKernel, yKernel = createKernel(41, exampleDartLocationsX, exampleDartLocationsY)
-xKernel, yKernel = createKernel(201)
+# xKernel, yKernel = createKernel(201)
 
-heatmap = np.outer(xKernel, yKernel)
-print(heatmap.sum())
-plt.imshow(heatmap)
-plt.colorbar()
-plt.show()
+# heatmap = np.outer(xKernel, yKernel)
+# print(heatmap.sum())
+# plt.imshow(heatmap)
+# plt.colorbar()
+# plt.show()
 
 
 
@@ -100,7 +101,7 @@ CHECKOUTPROBABILITIES = [dict(), dict()]
 def calculateRegionProbability(total, horizontal, vertical, checkout):
     print(total)
 
-    scores = np.fromfunction(np.vectorize(lambda i, j: score(i-200, j-200, total, checkout)), (400, 400))
+    scores = np.fromfunction(np.vectorize(lambda i, j: scoreProb(i-200, j-200, total, checkout)), (400, 400))
 
     horizontal = np.array(horizontal)
     horizontal = horizontal.reshape(1, -1)
@@ -181,11 +182,10 @@ def optimalNDarts(total, n):
 
     return probabilities
 
-calculateRegionProbabilities(xKernel, yKernel)
-print("COMPLETED STEP ONE")
-calculateCheckoutProbabilities()
+# calculateRegionProbabilities(xKernel, yKernel)
+# calculateCheckoutProbabilities()
 
-while True:
+while False:
     total = int(input("What score to checkout?"))
 
     probabilities = optimalNDarts(total, 3)
@@ -194,126 +194,126 @@ while True:
     plt.imshow(probabilities)
     plt.colorbar()
 
-    plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-oneMaxProb = dict()
-twoMaxProb = dict()
-
-def probabilityScore(value, throwsLeft, skill, checkout):
-    # Cannot checkout a score of less than two
-    if value < 0:
-        return 0
-    if value < 2 and checkout == True:
-        return 0
-    
-    if throwsLeft == 1:
-        scores = np.fromfunction(np.vectorize(lambda i, j: score(i-200, j-200, value, checkout)), (400, 400))
-        result = signal.convolve2d(scores, skill, mode='full')
-
-        return result
-
-    elif throwsLeft == 2:
-        inOne = probabilityScore(value, 1, skill, True)
-        miss = probabilityScore(0, 1, skill, False)
-
-        probability = np.add(inOne, np.multiply(miss, inOne.max()))
-
-        for i in range(1, value-1):
-            specific = probabilityScore(i, 1, skill, False)
-
-            if value-i in oneMaxProb:
-                finish = oneMaxProb[value-i]
-            else:
-                finish = probabilityScore(value-i, 1, skill, True).max()
-                oneMaxProb[value-i] = finish
-
-            probability = np.add(probability, np.multiply(specific, finish))
-
-        return probability
-    
-    elif throwsLeft == 3:
-        inTwo = probabilityScore(value, 2, skill, True)
-
-        probability = inTwo
-
-        for i in range(1,value-1):
-            specific = probabilityScore(i, 1, skill, False)
-
-            if value-i in twoMaxProb:
-                finish = twoMaxProb[value-i]
-            else:
-                finish = probabilityScore(value-i, 2, skill, True).max()
-                twoMaxProb[value-i] = finish
-
-            probability = np.add(probability, np.multiply(specific, finish))
-
-        return probability
-    
-# heatmap = probabilityScore(11, 3, kernel, True)
-
-# plt.imshow(heatmap)
-# plt.colorbar()
-# plt.show()
-
-# The size of the kernel
-# N = 50
-# k1d = signal.windows.gaussian(N, std=10).reshape(N, 1)
-# kernel = np.outer(k1d, k1d)
-# kernel = kernel/np.sum(kernel)
-
-# # Create a figure and axis
-# fig, ax = plt.subplots()
-
-# # Display the kernel using imshow
-# im = ax.imshow(kernel)
-# # Add a colorbar
-# cbar = fig.colorbar(im)
-
-# plt.imshow(kernel)
-# plt.colorbar()
-# plt.show()
-
-# indices = np.arange(400)
-# for region in range(0, 61):
-    # scores = np.fromfunction(np.vectorize(lambda i, j: score(i-200, j-200, region, False)), (400, 400))
-
-    # result = signal.convolve2d(scores, kernel, mode='full')
-
-
-    # plt.imshow(result)
-    # plt.colorbar()
-    # Show the plot
     # plt.show()
 
-# Show the plot
-# plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# oneMaxProb = dict()
+# twoMaxProb = dict()
+
+# def probabilityScore(value, throwsLeft, skill, checkout):
+#     # Cannot checkout a score of less than two
+#     if value < 0:
+#         return 0
+#     if value < 2 and checkout == True:
+#         return 0
+    
+#     if throwsLeft == 1:
+#         scores = np.fromfunction(np.vectorize(lambda i, j: score(i-200, j-200, value, checkout)), (400, 400))
+#         result = signal.convolve2d(scores, skill, mode='full')
+
+#         return result
+
+#     elif throwsLeft == 2:
+#         inOne = probabilityScore(value, 1, skill, True)
+#         miss = probabilityScore(0, 1, skill, False)
+
+#         probability = np.add(inOne, np.multiply(miss, inOne.max()))
+
+#         for i in range(1, value-1):
+#             specific = probabilityScore(i, 1, skill, False)
+
+#             if value-i in oneMaxProb:
+#                 finish = oneMaxProb[value-i]
+#             else:
+#                 finish = probabilityScore(value-i, 1, skill, True).max()
+#                 oneMaxProb[value-i] = finish
+
+#             probability = np.add(probability, np.multiply(specific, finish))
+
+#         return probability
+    
+#     elif throwsLeft == 3:
+#         inTwo = probabilityScore(value, 2, skill, True)
+
+#         probability = inTwo
+
+#         for i in range(1,value-1):
+#             specific = probabilityScore(i, 1, skill, False)
+
+#             if value-i in twoMaxProb:
+#                 finish = twoMaxProb[value-i]
+#             else:
+#                 finish = probabilityScore(value-i, 2, skill, True).max()
+#                 twoMaxProb[value-i] = finish
+
+#             probability = np.add(probability, np.multiply(specific, finish))
+
+#         return probability
+    
+# # heatmap = probabilityScore(11, 3, kernel, True)
+
+# # plt.imshow(heatmap)
+# # plt.colorbar()
+# # plt.show()
+
+# # The size of the kernel
+# # N = 50
+# # k1d = signal.windows.gaussian(N, std=10).reshape(N, 1)
+# # kernel = np.outer(k1d, k1d)
+# # kernel = kernel/np.sum(kernel)
+
+# # # Create a figure and axis
+# # fig, ax = plt.subplots()
+
+# # # Display the kernel using imshow
+# # im = ax.imshow(kernel)
+# # # Add a colorbar
+# # cbar = fig.colorbar(im)
+
+# # plt.imshow(kernel)
+# # plt.colorbar()
+# # plt.show()
+
+# # indices = np.arange(400)
+# # for region in range(0, 61):
+#     # scores = np.fromfunction(np.vectorize(lambda i, j: score(i-200, j-200, region, False)), (400, 400))
+
+#     # result = signal.convolve2d(scores, kernel, mode='full')
+
+
+#     # plt.imshow(result)
+#     # plt.colorbar()
+#     # Show the plot
+#     # plt.show()
+
+# # Show the plot
+# # plt.show()
         
 

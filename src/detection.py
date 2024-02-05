@@ -1,9 +1,6 @@
-import cv2, numpy as np
-from matplotlib import pyplot as plt
-import os, re
-from skimage.filters import threshold_isodata, threshold_li, threshold_minimum, threshold_yen, threshold_triangle, threshold_otsu
+import cv2
 from display import *
-import math, time
+import math
 
 def findDartTip(before, after, threshVal):
     diff = cv2.absdiff(before, after)
@@ -73,125 +70,109 @@ def findDartTip(before, after, threshVal):
 
     return cv2.cvtColor(final, cv2.COLOR_GRAY2BGR ), val
 
-fov = 67.5
+def cameraSetup():
+    fov = 67.5
+    cameraWidth = 640
 
-aCenter = findCenterAngle(320, 640, fov)
-bCenter = findCenterAngle(320, 640, fov)
-cCenter = findCenterAngle(320, 640, fov)
+    aCenter = findCenterAngle(320, cameraWidth, fov)
+    bCenter = findCenterAngle(320, cameraWidth, fov)
+    cCenter = findCenterAngle(320, cameraWidth, fov)
 
-aCameraX = -335*math.cos(math.radians(27))
-aCameraY = 335*math.sin(math.radians(27))
+    aCameraX = -335*math.cos(math.radians(27))
+    aCameraY = 335*math.sin(math.radians(27))
+    bCameraX = 335*math.cos(math.radians(27))
+    bCameraY = 335*math.sin(math.radians(27))
+    cCameraX = 335*math.cos(math.radians(81))
+    cCameraY = -335*math.sin(math.radians(81))
 
-bCameraX = 335*math.cos(math.radians(27))
-bCameraY = 335*math.sin(math.radians(27))
+    video_capture_1 = cv2.VideoCapture(2)
+    video_capture_2 = cv2.VideoCapture(3)
+    video_capture_3 = cv2.VideoCapture(1)
 
-cCameraX = 335*math.cos(math.radians(81))
-cCameraY = -335*math.sin(math.radians(81))
+    oldFrameA = None
+    oldFrameB = None
+    oldFrameC = None
 
-# board = Dartboard('Darboard')
+    detectAgain = False
 
-# board.drawPoint(aCameraX, aCameraY, 'r')
-# board.drawPoint(bCameraX, bCameraY, 'g')
-# board.drawPoint(cCameraX, cCameraY, 'b')
-
-# board.show()
-
-video_capture_1 = cv2.VideoCapture(2)
-video_capture_2 = cv2.VideoCapture(3)
-video_capture_3 = cv2.VideoCapture(1)
-
-oldFrameA = None
-oldFrameB = None
-oldFrameC = None
-
-detectAgain = False
-
-while True:
-    # Capture frame-by-frame
-    ret1, frame1 = video_capture_1.read()
-    ret2, frame2 = video_capture_2.read()
-    ret3, frame3 = video_capture_3.read()
-
-    height, width, layers = frame1.shape
+    # Get camera frame proportions
+    _, sample = video_capture_1.read()
+    height, width, _ = sample.shape
     resizeHeight = int(height/1.5)
     resizeWidth = int(width/1.5)
 
-    resFrame1 = cv2.resize(frame1, (resizeWidth, resizeHeight))
-    resFrame2 = cv2.resize(frame2, (resizeWidth, resizeHeight))
-    resFrame3 = cv2.resize(frame3, (resizeWidth, resizeHeight))
+    while True:
+        # Capture frame-by-frame
+        _, frame1 = video_capture_1.read()
+        _, frame2 = video_capture_2.read()
+        _, frame3 = video_capture_3.read()
 
-    resFrame1 = resFrame1[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
-    resFrame2 = resFrame2[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
-    resFrame3 = resFrame3[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
+        # Resize the images to reduce computational complexity
+        resFrame1 = cv2.resize(frame1, (resizeWidth, resizeHeight))
+        resFrame2 = cv2.resize(frame2, (resizeWidth, resizeHeight))
+        resFrame3 = cv2.resize(frame3, (resizeWidth, resizeHeight))
 
-    if oldFrameA is not None:
-        aImg, aX = findDartTip(oldFrameA, resFrame1, 20)
-        bImg, bX = findDartTip(oldFrameB, resFrame2, 20)
-        cImg, cX = findDartTip(oldFrameC, resFrame3, 20)
+        resFrame1 = resFrame1[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
+        resFrame2 = resFrame2[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
+        resFrame3 = resFrame3[int(resizeHeight/3):resizeHeight, 0:resizeWidth]
 
-        if aX == 0 and bX == 0 and cX == 0:
-            detectAgain = False
-        elif detectAgain == False:
-            detectAgain = True
-        elif detectAgain == True:
-            if aX == "Hand" or bX == "Hand" or cX == "Hand":
-                print("CHANGEOVER")
-            else:
-                guess = Dartboard("Dartboard")
-                guess.drawPoint(aCameraX, aCameraY, color='r')
-                guess.drawPoint(bCameraX, bCameraY, color='g')
-                guess.drawPoint(cCameraX, cCameraY, color='b')
+        if oldFrameA is not None:
+            _, aX = findDartTip(oldFrameA, resFrame1, 20)
+            _, bX = findDartTip(oldFrameB, resFrame2, 20)
+            _, cX = findDartTip(oldFrameC, resFrame3, 20)
 
-                aGrad = angleToGradient(findAngle(aX[0], resizeWidth, fov) - aCenter - 27)
-                bGrad = angleToGradient(findAngle(bX[0], resizeWidth, fov) - bCenter + 27)
-                cGrad = rotateGradient90(angleToGradient(findAngle(cX[0], resizeWidth, fov) - cCenter + 9))
+            if aX == 0 and bX == 0 and cX == 0:
+                detectAgain = False
+            elif detectAgain == False:
+                detectAgain = True
+            elif detectAgain == True:
+                if aX == "Hand" or bX == "Hand" or cX == "Hand":
+                    sync('Changeover')
+                elif aX != 0 and bX != 0 and cX != 0:
+                    aGrad = angleToGradient(findAngle(aX[0], resizeWidth, fov) - aCenter - 27)
+                    bGrad = angleToGradient(findAngle(bX[0], resizeWidth, fov) - bCenter + 27)
+                    cGrad = rotateGradient90(angleToGradient(findAngle(cX[0], resizeWidth, fov) - cCenter + 9))
 
-                guess.drawLine(aCameraX, aCameraY, aGrad, color='r')
-                guess.drawLine(bCameraX, bCameraY, bGrad, color='g')
-                guess.drawLine(cCameraX, cCameraY, cGrad, color='b')
+                    pointA = intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad)
+                    pointB = intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad)
+                    pointC = intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad)
 
-                pointA = guess.intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad)
-                pointB = guess.intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad)
-                pointC = guess.intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad)
+                    xAvg = (pointA[0]+pointB[0]+pointC[0])/3
+                    yAvg = (pointA[1]+pointB[1]+pointC[1])/3
 
-                xAvg = (pointA[0]+pointB[0]+pointC[0])/3
-                yAvg = (pointA[1]+pointB[1]+pointC[1])/3
+                    r, theta = cartesianToPolar(xAvg, yAvg)
+                    sync(score(r, theta))
 
-                r, theta = guess.cartesianToPolar(xAvg, yAvg)
+                detectAgain = False
 
-                print(guess.score(r, theta))
+            # imageA = resFrame1.copy()
+            # imageB = resFrame2.copy()
+            # imageC = resFrame3.copy()
 
-                guess.close()
+            # if type(aX) == tuple and type(bX) == tuple and type(cX) == tuple:
+            #     imageA = cv2.circle(imageA, aX, 5, (255, 0, 0), -1)
+            #     imageB = cv2.circle(imageB, bX, 5, (255, 0, 0), -1)
+            #     imageC = cv2.circle(imageC, cX, 5, (255, 0, 0), -1)
 
-            detectAgain = False
+            # processed = np.hstack([aImg, bImg, cImg])
+            # horizontal = np.hstack([imageA, imageB, imageC])
 
-        imageA = resFrame1.copy()
-        imageB = resFrame2.copy()
-        imageC = resFrame3.copy()
+            # all = np.vstack([horizontal, processed])
+            # cv2.imshow('Dartboard', all)
+        
+        if oldFrameA is None or detectAgain == False:
+            oldFrameA = resFrame1
+            oldFrameB = resFrame2
+            oldFrameC = resFrame3
 
-        if type(aX) == tuple and type(bX) == tuple and type(cX) == tuple:
-            imageA = cv2.circle(imageA, aX, 5, (255, 0, 0), -1)
-            imageB = cv2.circle(imageB, bX, 5, (255, 0, 0), -1)
-            imageC = cv2.circle(imageC, cX, 5, (255, 0, 0), -1)
+        k = cv2.waitKey(500)
+        if k == ord('q'):
+            break
 
-        processed = np.hstack([aImg, bImg, cImg])
-        horizontal = np.hstack([imageA, imageB, imageC])
+    # When everything is done, release the capture
+    video_capture_1.release()
+    video_capture_2.release()
+    video_capture_3.release()
 
-        all = np.vstack([horizontal, processed])
-        cv2.imshow('Dartboard', all)
-    
-    if oldFrameA is None or detectAgain == False:
-        oldFrameA = resFrame1
-        oldFrameB = resFrame2
-        oldFrameC = resFrame3
-
-    k = cv2.waitKey(500)
-    if k == ord('q'):
-        break
-
-# When everything is done, release the capture
-video_capture_1.release()
-video_capture_2.release()
-video_capture_3.release()
-cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 

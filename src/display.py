@@ -38,20 +38,61 @@ def angleToGradient(angle):
 def rotateGradient90(gradient):
     return -(1/gradient)
 
+def intersect(xPos1, yPos1, gradient1, xPos2, yPos2, gradient2):
+    yPos1 = -yPos1
+    yPos2 = -yPos2
+
+    c1 = yPos1 - (xPos1*gradient1)
+    c2 = yPos2 - (xPos2*gradient2)
+
+    x = (c2 - c1) / (gradient1 - gradient2)
+    y = gradient1*x + c1
+
+    return (x, y)
+
+def cartesianToPolar(x, y):
+    r = math.sqrt(x**2 + y**2)
+
+    if x == 0:
+        theta = math.pi/2
+    elif y == 0:
+        theta = 0
+    elif x > 0:
+        theta = math.atan(y/x)
+    else:
+        theta = math.atan(y/x) + math.pi
+    
+    return (r, theta)
+
+def score(r, theta):
+    sectors = [6,13,4,18,1,20,5,12,9,14,11,8,16,7,19,3,17,2,15,10]
+    sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
+    value = str(sectors[sector])
+
+    if 170 < r:
+        return(0, False)
+    elif 162 < r:
+        return(2*int(value), True)
+    elif 107 < r:
+        return(int(value), False)
+    elif 99 < r:
+        return(3*int(value), False)
+    elif 16 < r:
+        return(int(value), False)
+    elif 6.35 < r:
+        return(25, False)
+    else:
+        return(50, True)
+
 class Dartboard():
     def __init__(self, title, cBlack, cWhite, cRed, cGreen):
         self.fig, self.ax = plt.subplots()
-        # self.ax = plt.subplot(2, 4, 1)
 
         # Set dimensions and force aspect ratio to be square
         self.ax.set_xlim([-350, 350])
         self.ax.set_ylim([350, -350])
         self.ax.set_box_aspect(1)
         plt.gca().set_aspect('equal')
-
-        # Set background color
-        # self.ax.set_facecolor(cBlack)
-        # plt.figure(facecolor=cBlack)
 
         # self.ax.title.set_text(title)
 
@@ -73,7 +114,7 @@ class Dartboard():
         self.addText()
 
     def addText(self):
-        sectors = ['10','15','2','17','3','19','7','16','8','11','14','9','12','5','20','1','18','14','13','6']
+        sectors = ['10','15','2','17','3','19','7','16','8','11','14','9','12','5','20','1','18','4','13','6']
 
         for i in range(0, 20):
             x = math.cos((18/180)*math.pi + 2*math.pi/20*i)*200
@@ -139,47 +180,3 @@ class Dartboard():
             self.ax.axline((xPos, yPos), (xPos, yPos-10), linewidth=1, color=color, linestyle=linestyle)
         else:
             self.ax.axline((xPos, yPos), (xPos+10, yPos-10*gradient), linewidth=1, color=color, linestyle=linestyle)
-
-    def intersect(self, xPos1, yPos1, gradient1, xPos2, yPos2, gradient2):
-        yPos1 = -yPos1
-        yPos2 = -yPos2
-
-        c1 = yPos1 - (xPos1*gradient1)
-        c2 = yPos2 - (xPos2*gradient2)
-
-        x = (c2 - c1) / (gradient1 - gradient2)
-        y = gradient1*x + c1
-
-        self.drawPoint(x, -y)
-
-        return (x, y)
-
-    def cartesianToPolar(self, x, y):
-        r = math.sqrt(x**2 + y**2)
-
-        if x > 0:
-            theta = math.atan(y/x)
-        else:
-            theta = math.atan(y/x) + math.pi
-        
-        return (r, theta)
-    
-    def score(self, r, theta):
-        sectors = [6,13,4,18,1,20,5,12,9,14,11,8,16,7,19,3,17,2,15,10]
-        sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
-        value = str(sectors[sector])
-
-        if 170 < r:
-            return("MISS")
-        elif 162 < r:
-            return('D' + value)
-        elif 107 < r:
-            return('S' + value)
-        elif 99 < r:
-            return('T' + value)
-        elif 16 < r:
-            return('S' + value)
-        elif 6.35 < r:
-            return('S25')
-        else:
-            return('D25')
