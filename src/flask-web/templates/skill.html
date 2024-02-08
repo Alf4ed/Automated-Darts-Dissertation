@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icons/16x16.png') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+    <script src="{{ url_for('static', filename='scripts/skill.js')}}"></script>
+    <title>CS310: Darts</title>
+</head>
+
+    <body>
+        
+        {% include 'header.html' %}
+
+        <div class="half_and_half">
+            <div class="left">
+                <h3>Steps to calculate your skill:</h3>
+                <ol>
+                    <li>Begin by practicing dart throws, focusing on hitting the inner bullseye.</li>
+                    <li>When you feel ready, click the "Start" button to begin the test.</li>
+                    <li>Enter a name to save your skill profile.</li>
+                    <li>Aim your throws at the center of the dartboard.</li>
+                    <li>Complete 50 throws to assess your skill level.</li>
+                    <li>Once finished, press the "Stop" button to conclude the test.</li>
+                </ol>
+
+                <div class="skill-controls">
+                    <button class="skill-controls" type="button">Start</button>
+                    <button class="skill-controls" type="button" focus>Stop</button>
+                </div>
+            </div>
+            <div class="right">
+                <canvas id="board" height="100" width="100"></canvas>
+            </div>
+        </div>
+    </body>
+</html>
