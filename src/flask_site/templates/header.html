@@ -1,0 +1,15 @@
+<header>
+    <img src="{{ url_for('static', filename='images/icons/64x64.png') }}" alt="Site logo">
+    
+    <h1>CS310: Darts Scorer</h1>
+
+    <nav>        
+        <a href="\board-status"><h2>Board Status</h2></a>
+        <a class="divider" href="\play"><h2>Play</h2></a>
+        <a class="divider" href="\skill"><h2>Skill</h2></a>
+    </nav>
+
+    <script>
+        var imagesURL = "{{ url_for('static', filename='images') }}";
+    </script>
+</header> 

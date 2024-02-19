@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icons/16x16.png') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/board-status.js')}}"></script>
+    <title>CS310: Darts</title>
+</head>
+
+    <body>
+        {% include 'header.html' %}
+
+        <div class="camera-controls">
+            <div class="camera-control">
+                <h3>Display Type</h3>
+
+                <div class="control-buttons">
+                    <input class="control-buttons" type="radio" id="raw" name="display-type" value="raw" onclick="changeMode('CAMON')" checked>
+                    <label class="control-buttons" for="raw">raw</label>
+                    <input class="control-buttons" type="radio" id="processed" name="display-type" value="processed" onclick="changeMode('PROCESSING')">
+                    <label class="control-buttons" for="processed">processed</label>
+                </div>
+            </div>
+            <div class="camera-control">
+                <h3>Threshold</h3>
+                <input class="slider" type="range" id="threshold" name="threshold" min="0" max="255" onclick="updateThresh()"/>
+            </div>
+            <div class="camera-control">
+                <h3>Show Center</h3>
+                <label for="center">Draw a center line for</label><br>
+                <label for="center">camera adjustment</label>
+                <input name="center" id="showCenter" type="checkbox" onclick="centerLine()">
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="item">
+                <h2 class="cam-status one-row">Camera A</h2>
+                <button class="one-row" type="button" onclick="moveCam('0', '1')">&gt</button>
+                <img class="cam-status" src="\video\0">
+            </div>
+            <div class="item">
+                <h2 class="cam-status one-row">Camera B</h2>
+                <button class="one-row" type="button" onclick="moveCam('1', '-1')">&lt</button>
+                <button class="one-row" type="button" onclick="moveCam('1', '1')">&gt</button>
+                <img class="cam-status" src="\video\1">
+            </div>
+            <div class="item">
+                <h2 class="cam-status one-row">Camera C</h2>
+                <button class="one-row" type="button" onclick="moveCam('2', '-1')">&lt</button>
+                <img class="cam-status" src="\video\2">
+            </div>
+        </div>
+        </div>
+    </body>
+</html>
