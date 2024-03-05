@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icons/16x16.png') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/game.js')}}"></script>
+    <title>CS310: Game</title>
+</head>
+
+    <body>
+        
+        {% include 'header.html' %}
+
+        <div class="half_and_half">
+            <div class="left topbottom">
+                <div class="player active">
+                    <h1 class="name">{{ playerA }} {{ a_wins }}</h1>
+                    <h1 id="atotal" class="total">{{ total }}</h1><br>
+                    <div class="scores">
+                        <h2 id="a1" class="score">-</h2>
+                        <h2 id="a2" class="score">-</h2>
+                        <h2 id="a3" class="score">-</h2>
+                    </div>
+                </div>
+                <div class="player">
+                    <h1 class="name">{{ playerB }} {{ b_wins }}</h1>
+                    <h1 id="btotal" class="total">{{ total }}</h1><br>
+                    <div class="scores">
+                        <h2 id="b1" class="score">-</h2>
+                        <h2 id="b2" class="score">-</h2>
+                        <h2 id="b3" class="score">-</h2>
+                    </div>
+                </div>
+                <h2>Aiming recomendation</h2>
+                <div class="skill">
+                    <img src="\aim">
+                </div>
+            </div>
+            <div class="right">
+                <canvas id="board" height="100" width="100"></canvas>
+            </div>
+        </div>
+    </body>
+</html>

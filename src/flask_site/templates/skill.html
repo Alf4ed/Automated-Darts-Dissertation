@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="{{ url_for('static', filename='scripts/skill.js')}}"></script>
-    <title>CS310: Darts</title>
+    <title>CS310: Skill</title>
 </head>
 
     <body>
@@ -27,12 +27,12 @@
                 </ol>
 
                 <div class="skill-controls">
-                    <button class="skill-controls" type="button">Start</button>
-                    <button class="skill-controls" type="button" focus>Stop</button>
+                    <button class="skill-controls" type="button" onclick="startSkill()">Start</button>
+                    <button class="skill-controls" type="button" onclick="stopSkill()">Stop</button>
                 </div>
             </div>
             <div class="right">
-                <!-- <h1 id="last-hit">-</h1> -->
+                <h1 id="last-hit">-</h1>
                 <canvas id="board" height="100" width="100"></canvas>
             </div>
         </div>

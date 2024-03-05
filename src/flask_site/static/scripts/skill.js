@@ -1,27 +1,4 @@
-// const canvas = null;
-// const context = null;
-
-// window.onload = function() {
-//     canvas = document.getElementById("board");
-//     const dimensions = getObjectFitSize(
-//         true,
-//         canvas.clientWidth,
-//         canvas.clientHeight,
-//         canvas.width,
-//         canvas.height)
-    
-//     canvas.width = dimensions.width;
-//     canvas.height = dimensions.height;
-
-//     context = canvas.getContext("2d");
-//     context.scale(1, 1);
-
-//     const img = new Image();
-//     img.src = imagesURL+"/dartboard.png";
-//     img.onload = () => {
-//         context.drawImage(img, 0, 0, canvas.width, canvas.height);
-//     }
-// };
+let skilling = false;
 
 $(document).ready(function() {
 	const canvas = document.getElementById("board");
@@ -38,36 +15,63 @@ $(document).ready(function() {
   	const context = canvas.getContext("2d");
   	context.scale(1, 1);
 
-  	const img = new Image();
-  	img.src = imagesURL+"/dartboard.png";
-  	img.onload = () => {
-    	context.drawImage(img, 0, 0, canvas.width, canvas.height);
-  	}
+	// blur effect
+	context.shadowBlur = 10;
+	context.shadowColor = '#6495ED';
 
-  	setInterval(function() {
-    	$.ajax({
-     		type: "GET",
-     		url: "/positions",
-     		theContext: context,
-     		xDimension: canvas.width,
-     		yDimension: canvas.height,
-     		success: function(data){
-      			if ($(data.position).length > 0) {
-					$("#last-hit").text($(data.position)[2]);
-					var randomColor = Math.floor(Math.random()*16777215).toString(16);
-					$("#last-hit").attr("style", "color: #" + randomColor);
-					let [x, y] = realToVirtual(this.xDimension, this.yDimension, $(data.position)[0], $(data.position)[1])
-					plotPoint(this.theContext, x, y);
+	$('#board').css('background-image', 'url('+imagesURL+'/dartboard.png'+')');
+	$('#board').css('background-size', 'contain');
+	$('#board').css('background-repeat', 'no-repeat');
+	$('#board').css('background-position', 'center');
+
+	setInterval(function() {
+		if (skilling) {
+			$.ajax({
+				type: "GET",
+				url: "/positions",
+				theContext: context,
+				xDimension: canvas.width,
+				yDimension: canvas.height,
+				success: function(data){
+					if ($(data.position).length > 0) {
+						$("#last-hit").text(data.score);
+						let [x, y] = realToVirtual(this.xDimension, this.yDimension, $(data.position)[0], $(data.position)[1])
+						plotPoint(this.theContext, x, y);
+					}
 				}
-     		}
-   		});
-  	}, 1000);
+			});
+		}
+	}, 1000);
 });
 
+function startSkill() {
+	let person = prompt("What is your name?")
+	$.ajax({
+        type: "PUT",
+        url: "/start-skill",
+		contentType: "application/json",
+		data: JSON.stringify({ name: person }),
+    });
+	skilling = true;
+}
+
+function stopSkill() {
+	skilling = false;
+	alert("Skill calculation is over.")
+	$.ajax({
+        type: "PUT",
+        url: "/stop-skill",
+    });
+}
+
 function plotPoint(context, x, y) {
-  	context.fillStyle = '#00FFFF'
+  	context.fillStyle = '#6495ED'
   	context.beginPath();
-  	context.arc(x, y, 5, 0, 2 * Math.PI, true);
+  	context.arc(x, y, 7, 0, 2 * Math.PI, true);
+  	context.fill();
+	context.fillStyle = 'Black';
+  	context.beginPath();
+  	context.arc(x, y, 3, 0, 2 * Math.PI, true);
   	context.fill();
 }
 

@@ -269,4 +269,71 @@ input[type="checkbox"] {
 #last-hit {
     color: beige;
     font-size: 500%;
+    height: 20%;
+}
+
+#board {
+    max-height: 80%;
+    margin: auto;
+}
+
+.player {
+    border: 3px dotted beige;
+    margin-bottom: 2em;
+    padding: 0.5em;
+    background-color: #267F54;
+    opacity: 0.5;
+}
+
+.name {
+    display: inline-block;
+    margin-bottom: 0.5em;
+}
+
+.total {
+    float: right;
+}
+
+.scores {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.score {
+    background-color: beige;
+    color: #282C34;
+    text-align: center;
+    margin: 0 0.25em;
+    padding: 0.25em 0;
+}
+
+.active {
+    border-style: solid;
+    opacity: 1;
+}
+
+.topbottom {
+    overflow: hidden;
+    display: block;
+    height: 100%;
+    display: grid;
+    /* grid-template-rows: max-content max-content max-content auto; */
+    grid-template-rows: 20% 20% 5% 55%;
+    /* grid-template-rows: 1fr 1fr 1fr 1fr; */
+}
+
+.skill {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: inline-block;
+}
+
+.skill img {
+    object-fit: contain;
+    padding: 0;
+    margin: auto;
+    height: 100%;
+    width: 100%;
 }

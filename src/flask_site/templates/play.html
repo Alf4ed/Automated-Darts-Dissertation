@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icons/16x16.png') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
-    <title>CS310: Darts</title>
+    <title>CS310: New Game</title>
 </head>
 
     <body class="background">
         {% include 'header.html' %}
 
         <div class="play">
-            <form action="/new_game">
+            <form action="/new_game" method="post">
                 <h2 class="form" >Game Type</h2>
                 <div class="game-type">
                     <input class="game-type" type="radio" id="1001" name="game-type" value="1001">
@@ -30,7 +30,7 @@
                 </div>
 
                 <label class="form" for="legs">Legs</label>
-                <select class="form" name="legs" id="legs">
+                <select class="form" name="legs" id="legs" required>
                     <optgroup label="First to:">
                         <option class="form" value="1" selected>1</option>
                         <option class="form" value="2">2</option>
@@ -41,24 +41,24 @@
                         <option class="form" value="7">7</option>
                     </optgroup>
                     <optgroup label="Best of:">
-                        <option class="form" value="3">3</option>
-                        <option class="form" value="5">5</option>
-                        <option class="form" value="7">7</option>
-                        <option class="form" value="9">9</option>
-                        <option class="form" value="11">11</option>
-                        <option class="form" value="13">13</option>
-                        <option class="form" value="15">15</option>
-                        <option class="form" value="17">17</option>
-                        <option class="form" value="19">19</option>
-                        <option class="form" value="21">21</option>
+                        <option class="form" value="2">3</option>
+                        <option class="form" value="3">5</option>
+                        <option class="form" value="4">7</option>
+                        <option class="form" value="5">9</option>
+                        <option class="form" value="6">11</option>
+                        <option class="form" value="7">13</option>
+                        <option class="form" value="8">15</option>
+                        <option class="form" value="9">17</option>
+                        <option class="form" value="10">19</option>
+                        <option class="form" value="11">21</option>
                     </optgroup>
                 </select>
 
                 <label class="form" for="player1name">Player 1 name:</label>
-                <input class="form"type="text" id="player1name" name="player1name">
+                <input class="form" type="text" id="player1name" name="player1name" required>
                 <label class="form" for="player2name">Player 2 name:</label>
-                <input class="form"type="text" id="player2name" name="player2name">
-                <input class="form"type="submit" value="Play">
+                <input class="form" type="text" id="player2name" name="player2name" required>
+                <input class="form" type="submit" value="Play">
             </form>
         </div>
     </body>
