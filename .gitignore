@@ -2,6 +2,7 @@
 /presentation/
 /3d-models/
 /images/
+/venvCS310/
 
 # Ignore ANY directories with the following names
 __pycache__/
