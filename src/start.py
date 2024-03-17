@@ -1,13 +1,13 @@
 import threading
-import flask_site.index as website
+import flaskSite.index as website
 import detection
 import normal
-import gamedata
+import gameData
 import time
 
 lock = threading.Condition()
-admin = gamedata.Admin()
-game = gamedata.Game()
+admin = gameData.Admin()
+game = gameData.Game()
 
 t1 = threading.Thread(target=website.start_server, args=(admin,game,lock,))
 t2 = threading.Thread(target=detection.start_detection, args=(admin,game,lock,))

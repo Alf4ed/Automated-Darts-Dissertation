@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Wedge, Circle
 import math
 import cmath
-import gamedata
+import gameData
 
 def find_angle(xPos, width, fov):
     x = xPos - width/2
@@ -88,19 +88,19 @@ def score_dart(x, y):
     value = sectors[sector]
 
     if 170 < r:
-        return gamedata.Dart(0, 0, [x, y])
+        return gameData.Dart(0, 0, [x, y])
     elif 162 < r:
-        return gamedata.Dart(value, 2, [x, y])
+        return gameData.Dart(value, 2, [x, y])
     elif 107 < r:
-        return gamedata.Dart(value, 1, [x, y])
+        return gameData.Dart(value, 1, [x, y])
     elif 99 < r:
-        return gamedata.Dart(value, 3, [x, y])
+        return gameData.Dart(value, 3, [x, y])
     elif 16 < r:
-        return gamedata.Dart(value, 1, [x, y])
+        return gameData.Dart(value, 1, [x, y])
     elif 6.35 < r:
-        return gamedata.Dart(25, 1, [x, y])
+        return gameData.Dart(25, 1, [x, y])
     else:
-        return gamedata.Dart(25, 2, [x, y])
+        return gameData.Dart(25, 2, [x, y])
 
 def score_prob(x, y, target, checkout):
 

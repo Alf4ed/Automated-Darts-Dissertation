@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, Response, jsonify, redirect, url_for
 import cv2 as cv2
-import gamedata
+import gameData
 
 # Shared thread pointers
 adminRef = None
@@ -27,7 +27,7 @@ def new_game():
     
     lockRef.acquire()
     gameRef.start_game(first_to, format, playerA, playerB)
-    adminRef.mode = gamedata.CameraMode.GAME
+    adminRef.mode = gameData.CameraMode.GAME
     lockRef.release()
 
     return redirect('/game/'+playerA+'/'+playerB+'/'+str(format))
@@ -148,7 +148,7 @@ def scores():
 @app.route('/changeMode/<mode>', methods=['PUT'])
 def change_mode(mode):
     lockRef.acquire()
-    adminRef.mode = gamedata.CameraMode(mode)
+    adminRef.mode = gameData.CameraMode(mode)
     lockRef.release()
     return "OK"
 

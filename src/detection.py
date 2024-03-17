@@ -2,7 +2,7 @@ import cv2
 import time
 import math
 import numpy as np
-import gamedata
+import gameData
 import display
 from skimage.filters import threshold_otsu, threshold_sauvola, threshold_isodata, threshold_li, threshold_local, threshold_mean, threshold_minimum, threshold_niblack, threshold_triangle, threshold_yen
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ def start_detection(admin, game, lock):
         mode = admin.mode
         lock.release()
 
-        if mode == gamedata.CameraMode.OFF:
+        if mode == gameData.CameraMode.OFF:
             time.sleep(1)
         else:
             start_cameras(admin, game, lock)
@@ -148,10 +148,10 @@ def start_cameras(admin, game, lock):
         croppedFrame2 = resFrame2[croppedHeight:resizeHeight, 0:resizeWidth]
         croppedFrame3 = resFrame3[croppedHeight:resizeHeight, 0:resizeWidth]
 
-        if mode == gamedata.CameraMode.OFF:
+        if mode == gameData.CameraMode.OFF:
             break
         
-        elif mode == gamedata.CameraMode.ON:
+        elif mode == gameData.CameraMode.ON:
             if center_line == True:
                 cv2.line(croppedFrame1, (int(resizeWidth/2), 0), (int(resizeWidth/2), int(2*croppedHeight)), (0, 255, 0), thickness=1)
                 cv2.line(croppedFrame2, (int(resizeWidth/2), 0), (int(resizeWidth/2), int(2*croppedHeight)), (0, 255, 0), thickness=1)
@@ -166,7 +166,7 @@ def start_cameras(admin, game, lock):
             admin.frames[2] = frameCData.tobytes()
             lock.release()
         
-        elif mode == gamedata.CameraMode.POSITIONING or mode == gamedata.CameraMode.GAME:
+        elif mode == gameData.CameraMode.POSITIONING or mode == gameData.CameraMode.GAME:
             if oldFrameA is not None:
                 processedImageA, threshA = test_process_image(oldFrameA, croppedFrame1, 15)
                 processedImageB, threshB = test_process_image(oldFrameB, croppedFrame2, 15)
@@ -186,7 +186,7 @@ def start_cameras(admin, game, lock):
                 elif detectAgain == True:
                     if existsA == "Hand" or existsB == "Hand" or existsC == "Hand":
                         lock.acquire()
-                        if mode == gamedata.CameraMode.GAME:
+                        if mode == gameData.CameraMode.GAME:
                             game.clear_board()
                         lock.release()
                     elif aX != "Hand" and bX != "Hand" and cX != "Hand":
@@ -216,7 +216,7 @@ def start_cameras(admin, game, lock):
                             lock.acquire()
                             game.new_dart(dart_score)
 
-                            if mode == gamedata.CameraMode.GAME:
+                            if mode == gameData.CameraMode.GAME:
                                 game.dart(dart_score)
                             lock.release()
 
