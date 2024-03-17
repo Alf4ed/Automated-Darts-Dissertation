@@ -84,9 +84,9 @@ def find_dart_tip(processedImg):
         cnt = max(contours, key = cv2.contourArea)
         size = cv2.contourArea(cnt)
 
-        if size > 3000:
+        if size > 1500:
             val = "Hand"
-        elif size < 50:
+        elif size < 100:
             val =  0
         else:
             val =  tuple(cnt[cnt[:, :, 1].argmax()][0])
@@ -125,7 +125,7 @@ def start_cameras(admin, game, lock):
     height, width, _ = sample.shape
     resizeHeight = int(height/1.5)
     resizeWidth = int(width/1.5)
-    croppedHeight = int(resizeHeight/3)
+    croppedHeight = int(2*resizeHeight/5)
 
     while True:
         lock.acquire()
@@ -168,44 +168,57 @@ def start_cameras(admin, game, lock):
         
         elif mode == gamedata.CameraMode.POSITIONING or mode == gamedata.CameraMode.GAME:
             if oldFrameA is not None:
-                processedImageA = process_image(oldFrameA, croppedFrame1, 25)
-                processedImageB = process_image(oldFrameB, croppedFrame2, 25)
-                processedImageC = process_image(oldFrameC, croppedFrame3, 25)
+                processedImageA, threshA = test_process_image(oldFrameA, croppedFrame1, 15)
+                processedImageB, threshB = test_process_image(oldFrameB, croppedFrame2, 15)
+                processedImageC, threshC = test_process_image(oldFrameC, croppedFrame3, 15)
 
                 aX = find_dart_tip(processedImageA)
                 bX = find_dart_tip(processedImageB)
                 cX = find_dart_tip(processedImageC)
+                existsA = find_dart_tip(threshA)
+                existsB = find_dart_tip(threshB)
+                existsC = find_dart_tip(threshC)
 
-                if aX == 0 and bX == 0 and cX == 0:
+                if existsA == 0 and existsB == 0 and existsC == 0:
                     detectAgain = False
                 elif detectAgain == False:
                     detectAgain = True
                 elif detectAgain == True:
-                    if aX == "Hand" or bX == "Hand" or cX == "Hand":
+                    if existsA == "Hand" or existsB == "Hand" or existsC == "Hand":
                         lock.acquire()
                         if mode == gamedata.CameraMode.GAME:
                             game.clear_board()
                         lock.release()
-                    elif aX != 0 and bX != 0 and cX != 0:                        
-                        aGrad = display.angle_to_gradient(display.find_angle(aX[0], resizeWidth, fov) - aCenter - 27)
-                        bGrad = display.angle_to_gradient(display.find_angle(bX[0], resizeWidth, fov) - bCenter + 27)
-                        cGrad = display.rotate_gradient_90(display.angle_to_gradient(display.find_angle(cX[0], resizeWidth, fov) - cCenter + 9))
+                    elif aX != "Hand" and bX != "Hand" and cX != "Hand":
+                        aGrad, bGrad, cGrad = None, None, None
+                        if aX != 0:
+                            aGrad = display.angle_to_gradient(display.find_angle(aX[0], resizeWidth, fov) - aCenter - 27)
+                        if bX != 0:
+                            bGrad = display.angle_to_gradient(display.find_angle(bX[0], resizeWidth, fov) - bCenter + 27)
+                        if cX != 0:
+                            cGrad = display.rotate_gradient_90(display.angle_to_gradient(display.find_angle(cX[0], resizeWidth, fov) - cCenter + 9))
 
-                        pointA = display.intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad)
-                        pointB = display.intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad)
-                        pointC = display.intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad)
+                        points = []
 
-                        xAvg = (pointA[0]+pointB[0]+pointC[0])/3
-                        yAvg = (pointA[1]+pointB[1]+pointC[1])/3
+                        if aGrad is not None and bGrad is not None:
+                            points.append(display.intersect(aCameraX, aCameraY, aGrad, bCameraX, bCameraY, bGrad))
+                        if aGrad is not None and cGrad is not None:
+                            points.append(display.intersect(aCameraX, aCameraY, aGrad, cCameraX, cCameraY, cGrad))
+                        if bGrad is not None and cGrad is not None:
+                            points.append(display.intersect(bCameraX, bCameraY, bGrad, cCameraX, cCameraY, cGrad))
 
-                        dart_score = display.score_dart(xAvg, yAvg)
+                        if len(points) > 0:
+                            xAvg = (sum([i[0] for i in points]))/len(points)
+                            yAvg = (sum([i[1] for i in points]))/len(points)
 
-                        lock.acquire()
-                        game.new_dart(dart_score)
+                            dart_score = display.score_dart(xAvg, yAvg)
 
-                        if mode == gamedata.CameraMode.GAME:
-                            game.dart(dart_score)
-                        lock.release()
+                            lock.acquire()
+                            game.new_dart(dart_score)
+
+                            if mode == gamedata.CameraMode.GAME:
+                                game.dart(dart_score)
+                            lock.release()
 
                     detectAgain = False
         
@@ -215,8 +228,8 @@ def start_cameras(admin, game, lock):
                 oldFrameC = croppedFrame3
 
         # Limit processing to 2 FPS
-        time.sleep(0.5)
-        # cv2.waitKey(250)
+        # time.sleep(0.5)
+        cv2.waitKey(250)
 
     # When everything is done, release the capture
     video_capture_1.release()
@@ -245,7 +258,7 @@ def start_cameras(admin, game, lock):
 
 
 
-def test_process_image(before, after, option):
+def test_process_image(before, after, thresh_val):
     diff = cv2.absdiff(before, after)
     grayscale = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
     blurred = cv2.medianBlur(grayscale, 3)
@@ -305,20 +318,24 @@ def test_process_image(before, after, option):
     morphological = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
     final = cv2.morphologyEx(morphological, cv2.MORPH_CLOSE, kernelClose)
 
-    cv2.imwrite("im_before.jpg", before) 
-    cv2.imwrite("im_after.jpg", after)
-    cv2.imwrite("im_difference.jpg", diff)
-    cv2.imwrite("im_grayscale.jpg", grayscale) 
-    cv2.imwrite("im_blurred.jpg", blurred) 
-    cv2.imwrite("im_triangle.jpg", triangle) 
-    cv2.imwrite("im_yen.jpg", yen) 
-    cv2.imwrite("im_combined.jpg", all) 
-    cv2.imwrite("im_morphological.jpg", morphological) 
-    cv2.imwrite("im_final.jpg", final)
+    # cv2.imwrite("im_before.jpg", before) 
+    # cv2.imwrite("im_after.jpg", after)
+    # cv2.imwrite("im_difference.jpg", diff)
+    # cv2.imwrite("im_grayscale.jpg", grayscale) 
+    # cv2.imwrite("im_blurred.jpg", blurred) 
+    # cv2.imwrite("im_triangle.jpg", triangle) 
+    # cv2.imwrite("im_yen.jpg", yen) 
+    # cv2.imwrite("im_combined.jpg", all) 
+    # cv2.imwrite("im_morphological.jpg", morphological) 
+    # cv2.imwrite("im_final.jpg", final)
 
-    out = input("HI")
+    # out = input("HI")
 
-    return final
+    ret, thresh = cv2.threshold(norm_img1, thresh_val, 255, cv2.THRESH_BINARY)
+    thresh_morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
+    thresh_final = cv2.morphologyEx(thresh_morph, cv2.MORPH_CLOSE, kernelClose)
+
+    return final, thresh_final
 
 
 

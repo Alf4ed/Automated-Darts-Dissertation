@@ -1,0 +1,4 @@
+# ignore ALL files in the following root directories
+/presentation/
+/3d-models/
+/images/

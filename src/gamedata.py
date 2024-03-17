@@ -59,6 +59,8 @@ class Turn:
         self.darts.append(dart)
 
     def bust(self, dart):
+        for i in self.darts:
+            self.player.undo_dart(i)
         self.darts.append(Bust(dart))
 
     def display(self):
@@ -118,6 +120,9 @@ class Player:
 
     def dart(self, dart):
         self.score -= dart.value()
+
+    def undo_dart(self, dart):
+        self.score += dart.value()
         
     def is_bust(self, dart):
         result = self.score - dart.value()
@@ -166,6 +171,7 @@ class Game:
         self.playing = True
         self.update = True
         self.clear = False
+        self.just_won = False
 
     def dart(self, dart):
         self.current_leg.dart(dart)
@@ -180,10 +186,17 @@ class Game:
                 self.reset()
                 self.legs_played.append(self.current_leg)
                 self.current_leg = Leg(self.players, len(self.legs_played) % 2)
+                self.just_won = True
     
     def get_scores(self):
         if self.playing == True:
             return [self.current_leg.get_last_turn(self.players[0]), self.current_leg.get_last_turn(self.players[1])]
+        else:
+            return -1
+        
+    def get_wins(self):
+        if self.playing == True:
+            return [self.players[0].wins, self.players[1].wins]
         else:
             return -1
     
@@ -215,8 +228,15 @@ class Game:
         self.current_leg.change = False
         return result
     
+    def has_just_won(self):
+        result = self.just_won
+        self.just_won = False
+        return result, self.current_leg.player_index
+    
     def is_clear(self):
-        return self.clear
+        result = self.clear
+        self.clear = False
+        return result
     
     def clear_board(self):
         self.clear = True

@@ -9,9 +9,9 @@ capC = cv.VideoCapture(1)
 fourcc = cv.VideoWriter_fourcc(*'3IVD')
 
 # outA = cv.VideoWriter('show.avi', fourcc, 1.0, (2840,  3029), True)
-outA = cv.VideoWriter('TBoutputA.avi', fourcc, 9.0, (640,  480), True)
-outB = cv.VideoWriter('TBoutputB.avi', fourcc, 9.0, (640,  480), True)
-outC = cv.VideoWriter('TBoutputC.avi', fourcc, 9.0, (640,  480), True)
+outA = cv.VideoWriter('LotsA.avi', fourcc, 9.0, (640,  480), True)
+outB = cv.VideoWriter('LotsB.avi', fourcc, 9.0, (640,  480), True)
+outC = cv.VideoWriter('LotsC.avi', fourcc, 9.0, (640,  480), True)
 
 blank_frameA = None
 blank_frameB = None

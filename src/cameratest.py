@@ -2,17 +2,18 @@ import numpy as np
 import cv2, os
 
 video_capture_1 = cv2.VideoCapture(0)
-video_capture_2 = cv2.VideoCapture(1)
-video_capture_3 = cv2.VideoCapture(2)
+video_capture_2 = cv2.VideoCapture(2)
+video_capture_3 = cv2.VideoCapture(1)
 
-ret1, frame1 = video_capture_1.read()
-height, width, layers = frame1.shape
-resizeHeight = int(height/1.5)
-resizeWidth = int(width/1.5)
-before = cv2.resize(frame1, (resizeWidth, resizeHeight))
+region = 0
+count = 0
 
-number = 25
-region = ['S1', 'S2', 'S3', 'S4', 'D1', 'D2', 'D3', 'D4', 'empty1', 'empty2', 'calib1', 'calib2', 'calib3']
+multipliers = ['TRIPLE', 'INNER_SINGLE']
+multiplier = 'ERROR'
+# os.mkdir('large_dataset/')
+os.mkdir('large_dataset/'+str(multiplier))
+
+print(str(multiplier)+'/'+str(region), 'BLANK')
 
 while True:
     # Capture frame-by-frame
@@ -20,21 +21,7 @@ while True:
     ret2, frame2 = video_capture_2.read()
     ret3, frame3 = video_capture_3.read()
 
-    height, width, layers = frame1.shape
-    resizeHeight = int(height/1.5)
-    resizeWidth = int(width/1.5)
-
-    resFrame1 = cv2.resize(frame1, (resizeWidth, resizeHeight))
-    resFrame2 = cv2.resize(frame2, (resizeWidth, resizeHeight))
-    resFrame3 = cv2.resize(frame3, (resizeWidth, resizeHeight))
-
-    
-
-    # cv2.line(resFrame1, (int(resizeWidth/2), 0), (int(resizeWidth/2), resizeHeight), (255,0,255), 2)
-    # cv2.line(resFrame2, (int(resizeWidth/2), 0), (int(resizeWidth/2), resizeHeight), (255,0,255), 2)
-    # cv2.line(resFrame3, (int(resizeWidth/2), 0), (int(resizeWidth/2), resizeHeight), (255,0,255), 2)
-
-    horizontal = np.hstack([resFrame1, resFrame2, resFrame3])
+    horizontal = np.hstack([frame1, frame2, frame3])
 
     cv2.imshow('Dartboard', horizontal)
 
@@ -43,17 +30,43 @@ while True:
         break
     if k == ord('s'):
 
-        reg = (number-25)
-        num = 25
+        if count == 0:
+            os.mkdir('large_dataset/'+str(multiplier)+'/'+str(region))
 
-        os.mkdir('dataset/'+region[reg]+str(num))
+            os.mkdir('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK')
 
-        cv2.imwrite('dataset/'+region[reg]+str(num)+'/A.jpg', frame1)
-        cv2.imwrite('dataset/'+region[reg]+str(num)+'/B.jpg', frame2)
-        cv2.imwrite('dataset/'+region[reg]+str(num)+'/C.jpg', frame3)
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK'+'/A.jpg', frame1)
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK'+'/B.jpg', frame2)
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK'+'/C.jpg', frame3)
+        else:
+            os.mkdir('large_dataset/'+str(multiplier)+'/'+str(region)+'/'+str(count))
 
-        print(region[reg]+str(num))
-        number += 1
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/'+str(count)+'/A.jpg', frame1)
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/'+str(count)+'/B.jpg', frame2)
+            cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/'+str(count)+'/C.jpg', frame3)
+
+        count += 1
+
+        if count % 6 == 0:
+            count = 0
+            region += 1
+
+        if region == 21 and (multiplier == 'SINGLE' or multiplier == 'DOUBLE'):
+            region = 25
+        elif region == 21:
+            region = 26
+
+        if region == 26:
+            region = 1
+            count = 0
+            multiplier = multipliers.pop(0)
+            os.mkdir('large_dataset/'+str(multiplier))
+
+        if count == 0:
+            print(str(multiplier)+'/'+str(region), 'BLANK')
+        else:
+            print(str(multiplier)+'/'+str(region))
+
 
 # When everything is done, release the capture
 video_capture_1.release()

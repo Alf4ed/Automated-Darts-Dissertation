@@ -19,6 +19,10 @@ IMPOSSIBLE_SCORES = [[23,29,31,35,37,41,43,44,46,47,49,52,53,55,56,58,59],
                     [283,286,289,292,293,295,296,298,299],
                     [343,346,349,352,353,355,356,358,359]]
 
+IMPOSSIBLE_CHECKOUTS = [[0,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,42,43,44,45,46,47,48,49,51,52,53,54,55,56,57,58,59,60],
+                        [0,1,99,102,103,105,106,108,109,111,112,113,114,115,116,117,118,119,120],
+                        [159,162,163,165,166,168,169,171,172,173,174,175,176,177,178,179,180]]
+
 class Normal():
     def __init__(self):
         self.DOUBLE_REGION_PROBABILITIES = dict()
@@ -124,7 +128,11 @@ class Normal():
             self.calculate_n_dart_checkout_probabilities(n_darts)
 
     def optimal_n_darts(self, total, n):
-        if total < 0 or n*60 < total or total > 220:
+
+        if total in IMPOSSIBLE_CHECKOUTS[n-1] or total > n*60:
+            n += 3
+
+        if total < 0 or n*60 < total or total > 180:
             return self.EXPECTED_SCORE
         elif total in IMPOSSIBLE_SCORES[n-1]:
             return self.EXPECTED_SCORE
@@ -223,7 +231,7 @@ def start_normal(admin, game, lock):
         if admin.mode == gamedata.CameraMode.GAME and game.is_updated():
             player = players[game.current_leg.player_index]
             plt.clf()
-            prob = player.optimal_n_darts(game.current_leg.current_player.score, 6-len(game.current_leg.current_turn.darts))
+            prob = player.optimal_n_darts(game.current_leg.current_player.score, 3-len(game.current_leg.current_turn.darts))
             
             # Create a grid of x, y coordinates
             x, y = np.meshgrid(np.arange(400), np.arange(400))

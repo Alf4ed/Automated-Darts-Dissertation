@@ -44,6 +44,22 @@ $(document).ready(function() {
 					$(".player").toggleClass("active");
 				}
 
+				if (data.just_won == true) {
+					$("#a_wins").text($(data.wins)[0]);
+					$("#b_wins").text($(data.wins)[1]);
+
+					element = $(".left");
+					playerA = element.children(":first");
+					if (data.active_player == 0) {
+						playerA.addClass("active");
+						playerA.next().removeClass("active");
+					}
+					else {
+						playerA.removeClass("active");
+						playerA.next().addClass("active");
+					}
+				}
+
 				if (data.clear == true) {
 					this.theContext.clearRect(0, 0, this.xDimension, this.yDimension);
 				}

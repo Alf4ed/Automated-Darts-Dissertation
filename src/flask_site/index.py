@@ -13,7 +13,7 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/play')
 def play():
-    change_mode('OFF')
+    change_mode('ON')
     return render_template('play.html')
 
 # Play a game
@@ -136,11 +136,13 @@ def scores():
     lockRef.acquire()
     scores = gameRef.get_scores()
     totals = gameRef.get_totals()
+    wins = gameRef.get_wins()
     dart_pos, _ = gameRef.get_new_dart()
     change = gameRef.change()
     clear = gameRef.is_clear()
+    just_won, active_player = gameRef.has_just_won()
     lockRef.release()
-    return jsonify(scores=scores, totals=totals, position=dart_pos, change=change, clear=clear)
+    return jsonify(scores=scores, totals=totals, position=dart_pos, change=change, clear=clear, wins=wins, just_won=just_won, active_player=active_player)
 
 # Change the camera mode
 @app.route('/changeMode/<mode>', methods=['PUT'])
