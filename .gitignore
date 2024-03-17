@@ -1,6 +1,6 @@
 # Ignore ALL files in the following root directories
 /presentation/
-/3d-models/
+/3DModels/
 /images/
 /venvCS310/
 
