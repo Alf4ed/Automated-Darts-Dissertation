@@ -6,7 +6,6 @@ import gamedata
 import time
 
 lock = threading.Condition()
-
 admin = gamedata.Admin()
 game = gamedata.Game()
 

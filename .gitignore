@@ -1,4 +1,7 @@
-# ignore ALL files in the following root directories
+# Ignore ALL files in the following root directories
 /presentation/
 /3d-models/
 /images/
+
+# Ignore ANY directories with the following names
+__pycache__/
