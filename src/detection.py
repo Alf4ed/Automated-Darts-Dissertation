@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 fov = 67.5
 cameraWidth = 640
 
-aCenter = display.find_center_angle(320, cameraWidth, fov)
-bCenter = display.find_center_angle(320, cameraWidth, fov)
-cCenter = display.find_center_angle(320, cameraWidth, fov)
+# Center of the board relative to the camera
+aCenter = display.find_angle(320, cameraWidth, fov)
+bCenter = display.find_angle(320, cameraWidth, fov)
+cCenter = display.find_angle(320, cameraWidth, fov)
 
+# Camera locations
 aCameraX = -335*math.cos(math.radians(27))
 aCameraY = 335*math.sin(math.radians(27))
 bCameraX = 335*math.cos(math.radians(27))
@@ -22,6 +24,7 @@ bCameraY = 335*math.sin(math.radians(27))
 cCameraX = 335*math.cos(math.radians(81))
 cCameraY = -335*math.sin(math.radians(81))
 
+# Turn the cameras off when not being used
 def start_detection(admin, game, lock):
     while True:
         lock.acquire()
@@ -107,12 +110,16 @@ def find_dart_tip(processedImg):
     return val
 
 def start_cameras(admin, game, lock):
-    video_capture_1 = cv2.VideoCapture(0)
-    video_capture_2 = cv2.VideoCapture(2)
-    video_capture_3 = cv2.VideoCapture(1)
-    # video_capture_1 = cv2.VideoCapture('TBoutputA.avi')
-    # video_capture_2 = cv2.VideoCapture('TBoutputC.avi')
-    # video_capture_3 = cv2.VideoCapture('TBoutputB.avi')
+    # Use prerecorded camera feeds if cameras are not detected
+    try:
+        video_capture_1 = cv2.VideoCapture(0)
+        video_capture_2 = cv2.VideoCapture(2)
+        video_capture_3 = cv2.VideoCapture(1)
+    except:
+        print("Cameras are not connected. Using video feeds from file.")
+        video_capture_1 = cv2.VideoCapture('TBoutputA.avi')
+        video_capture_2 = cv2.VideoCapture('TBoutputC.avi')
+        video_capture_3 = cv2.VideoCapture('TBoutputB.avi')
 
     oldFrameA = None
     oldFrameB = None
@@ -336,20 +343,6 @@ def test_process_image(before, after, thresh_val):
     thresh_final = cv2.morphologyEx(thresh_morph, cv2.MORPH_CLOSE, kernelClose)
 
     return final, thresh_final
-
-
-
-
-
-
-
-
-def test_all():
-    modes = ["thresh","triangle","yen","li","otsu","isodata","mean","local"]
-
-    for i in range(0, len(modes)):
-        print(modes[i])
-        test(i)
 
 def test(mode):
     video_capture_1 = cv2.VideoCapture('AllA.avi')

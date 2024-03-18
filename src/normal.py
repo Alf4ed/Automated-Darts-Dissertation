@@ -6,35 +6,43 @@ from matplotlib import cm
 from matplotlib.patches import Circle
 import math
 import display
-import gamedata
+import gameData
 import time
 import io
 
+# All double totals on the board
 DOUBLES = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,50]
 
-IMPOSSIBLE_SCORES = [[23,29,31,35,37,41,43,44,46,47,49,52,53,55,56,58,59],
-                    [103,106,109,112,113,115,116,118,119],
-                    [163,166,169,172,173,175,176,178,179],
-                    [223,226,229,232,233,235,236,238,239],
-                    [283,286,289,292,293,295,296,298,299],
-                    [343,346,349,352,353,355,356,358,359]]
+# Impossible scores to hit in n darts
+IMPOSSIBLE_SCORES = [[23,29,31,35,37,41,43,44,46,47,49,52,53,55,56,58,59],  # 1 dart
+                    [103,106,109,112,113,115,116,118,119],                  # 2 darts
+                    [163,166,169,172,173,175,176,178,179],                  # 3 darts
+                    [223,226,229,232,233,235,236,238,239],                  # 4 darts
+                    [283,286,289,292,293,295,296,298,299],                  # 5 darts
+                    [343,346,349,352,353,355,356,358,359]]                  # 6 darts
 
-IMPOSSIBLE_CHECKOUTS = [[0,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,42,43,44,45,46,47,48,49,51,52,53,54,55,56,57,58,59,60],
-                        [0,1,99,102,103,105,106,108,109,111,112,113,114,115,116,117,118,119,120],
-                        [159,162,163,165,166,168,169,171,172,173,174,175,176,177,178,179,180]]
+# Impossible scores to checkout in n darts (the final dart must be a DOUBLE)
+IMPOSSIBLE_CHECKOUTS = [[0,1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,42,43,44,45,46,47,48,49,51,52,53,54,55,56,57,58,59,60],    # 1 dart
+                        [0,1,99,102,103,105,106,108,109,111,112,113,114,115,116,117,118,119,120],                                               # 2 darts
+                        [0,1,159,162,163,165,166,168,169,171,172,173,174,175,176,177,178,179,180]]                                              # 3 darts
 
 class Normal():
     def __init__(self):
+        # Store probabilities for all aim locations
         self.DOUBLE_REGION_PROBABILITIES = dict()
         self.SCORING_REGION_PROBABILITIES = dict()
 
+        # Store the maximum checkout probability for each total
         self.CHECKOUT_PROBABILITIES = [dict(), dict(), dict(), dict(), dict()]
 
         self.EXPECTED_SCORE = None
 
+    # Calculate the 2D skill kernel
     def create_kernel(self, size, data_x=None, data_y=None, std=20):
         x, y = [], []
 
+        # Use a players dart locations from skill calculation if they exist
+        # Otherwise model as a standard circular normal distribution with standard deviation of 20mm
         if data_x is None or data_y is None:
             ax, locx, scalex = 0, 0, std
             ay, locy, scaley = 0, 0, std
@@ -45,6 +53,7 @@ class Normal():
         skewnorm_dist_x = skewnorm(ax, locx, scalex)
         skewnorm_dist_y = skewnorm(ay, locy, scaley)
 
+        # Use cdf to bin the data
         for i in range(-math.floor(size/2), math.ceil(size/2)):
             leftx = skewnorm_dist_x.cdf(i-0.5)
             rightx = skewnorm_dist_x.cdf(i+0.5)
@@ -54,8 +63,10 @@ class Normal():
             righty = skewnorm_dist_y.cdf(i+0.5)
             y.append(righty-lefty)
 
+        # Return the horizontal and vertical discrete distributions
         return x, y
     
+    # For all aim locations on the board, calculate the expected value given the players skill
     def calculate_expected_score(self, horizontal, vertical):
         totals = np.fromfunction(np.vectorize(lambda i, j: display.score_dart(j-200, 200-i).value()), (400, 400))
         
@@ -64,13 +75,14 @@ class Normal():
         vertical = np.array(vertical)
         vertical = vertical.reshape(1, -1)
 
+        # Perform two 1D convolutions as this is faster than one 2D convolution
         resultA = signal.correlate(totals, horizontal, mode='same')
         probabilities = signal.correlate(resultA, vertical.T, mode='same')
         
         return probabilities
 
+    # For all aim locations on the board, and a given total, calculate the probability of hitting this total
     def calculate_region_probability(self, total, horizontal, vertical, checkout):
-
         scores = np.fromfunction(np.vectorize(lambda i, j: display.score_prob(i-200, j-200, total, checkout)), (400, 400))
 
         horizontal = np.array(horizontal)
@@ -78,11 +90,13 @@ class Normal():
         vertical = np.array(vertical)
         vertical = vertical.reshape(1, -1)
 
+        # Perform two 1D convolutions as this is faster than one 2D convolution
         resultA = signal.correlate(scores, horizontal, mode='same')
         probabilities = signal.correlate(resultA, vertical.T, mode='same')
         
         return probabilities
 
+    # For all aim locations on the board, and for all possible one dart scores, calculate the probability of hitting this score
     def calculate_region_probabilities(self, horizontal, vertical):
         # Calculate probabilities for doubles
         for total in DOUBLES:
@@ -228,7 +242,7 @@ def start_normal(admin, game, lock):
     while True:
         lock.acquire()
 
-        if admin.mode == gamedata.CameraMode.GAME and game.is_updated():
+        if admin.mode == gameData.CameraMode.GAME and game.is_updated():
             player = players[game.current_leg.player_index]
             plt.clf()
             prob = player.optimal_n_darts(game.current_leg.current_player.score, 3-len(game.current_leg.current_turn.darts))

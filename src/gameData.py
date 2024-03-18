@@ -140,21 +140,6 @@ class Player:
     def reset(self):
         self.score = self.format
 
-    # def last_turn(self):
-    #     return self.turns[-1][-1].display() if self.turns else ['-','-','-']
-    
-    # def new_turn(self):
-    #     self.turns[-1].append(Turn())
-    
-    # def dart(self, dart):
-    #     if self.score - dart.value() == 0 and dart.multiplier == True:
-    #         exit()
-    #     if self.score - dart.value() >= 2:
-    #         self.score = self.score - dart.value()
-    #         self.turns[-1].append(dart)
-    #     else:
-    #         self.turns[-1].append(Bust())
-
 class Game:
     def __init__(self):
         self.positions = []

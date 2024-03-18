@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 
+
 capA = cv.VideoCapture(0)
 capB = cv.VideoCapture(2)
 capC = cv.VideoCapture(1)
@@ -8,7 +9,7 @@ capC = cv.VideoCapture(1)
 # Define the codec and create VideoWriter object
 fourcc = cv.VideoWriter_fourcc(*'3IVD')
 
-# outA = cv.VideoWriter('show.avi', fourcc, 1.0, (2840,  3029), True)
+# Define the output formats
 outA = cv.VideoWriter('LotsA.avi', fourcc, 9.0, (640,  480), True)
 outB = cv.VideoWriter('LotsB.avi', fourcc, 9.0, (640,  480), True)
 outC = cv.VideoWriter('LotsC.avi', fourcc, 9.0, (640,  480), True)
@@ -25,6 +26,7 @@ while True:
     retB, frameB = capB.read()
     retC, frameC = capC.read()
 
+    # Display the three video feeds
     horizontal = np.hstack((frameA, frameB, frameC))
     cv.imshow('All', horizontal)
 
@@ -32,7 +34,9 @@ while True:
     if key == ord('q'):
         break
     elif key == ord('s'):
-        # write the frame
+        # Write three 'blank' frames, then
+        # Write three 'dart' frames, then
+        # Write three 'change' frames
         for i in range(3):
             outA.write(blank_frameA)
             outB.write(blank_frameB)
@@ -48,21 +52,17 @@ while True:
             outB.write(change_frameB)
             outC.write(change_frameC)
 
+    # Update the 'blank' frame
     elif key == ord('b'):
         blank_frameA = frameA
         blank_frameB = frameB
         blank_frameC = frameC
 
+    # Update the 'change' frame
     elif key == ord('c'):
         change_frameA = frameA
         change_frameB = frameB
         change_frameC = frameC
-
-# for i in range(1, 104, 5):
-#     img = cv.imread('std'+str(i)+'.png')
-    
-#     outA.write(img)
-
 
 # Release everything if job is finished
 capA.release()

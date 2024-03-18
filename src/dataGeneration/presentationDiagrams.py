@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 # from matplotlib.patches import Circle
 # import cv2
 
+"""This file was used to generate a number of the diagrams used througout my presentation"""
+
 # hmm = normal.Normal()
 
 # for i in range(1, 104, 5):

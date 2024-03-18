@@ -8,12 +8,10 @@ video_capture_3 = cv2.VideoCapture(1)
 region = 0
 count = 0
 
-multipliers = ['TRIPLE', 'INNER_SINGLE']
-multiplier = 'ERROR'
-# os.mkdir('large_dataset/')
+multipliers = ['DOUBLE','TRIPLE', 'INNER_SINGLE']
+multiplier = 'SINGLE'
+os.mkdir('large_dataset/')
 os.mkdir('large_dataset/'+str(multiplier))
-
-print(str(multiplier)+'/'+str(region), 'BLANK')
 
 while True:
     # Capture frame-by-frame
@@ -21,8 +19,8 @@ while True:
     ret2, frame2 = video_capture_2.read()
     ret3, frame3 = video_capture_3.read()
 
+    # Display the three video feeds
     horizontal = np.hstack([frame1, frame2, frame3])
-
     cv2.imshow('Dartboard', horizontal)
 
     k = cv2.waitKey(500)
@@ -30,9 +28,10 @@ while True:
         break
     if k == ord('s'):
 
+        # Capture one image from each of the three cameras
+        # Save them in an appropriately named directory
         if count == 0:
             os.mkdir('large_dataset/'+str(multiplier)+'/'+str(region))
-
             os.mkdir('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK')
 
             cv2.imwrite('large_dataset/'+str(multiplier)+'/'+str(region)+'/BLANK'+'/A.jpg', frame1)
@@ -47,21 +46,25 @@ while True:
 
         count += 1
 
+        # Take one 'blank' and 5 'dart' photos for each location
         if count % 6 == 0:
             count = 0
             region += 1
 
+        # Move from the 20 region to the 25 region
         if region == 21 and (multiplier == 'SINGLE' or multiplier == 'DOUBLE'):
             region = 25
         elif region == 21:
             region = 26
 
+        # Restart from 1 with new multiplier when all sections have been visited
         if region == 26:
             region = 1
             count = 0
             multiplier = multipliers.pop(0)
             os.mkdir('large_dataset/'+str(multiplier))
 
+        # Print the location that the next dart should be captured in
         if count == 0:
             print(str(multiplier)+'/'+str(region), 'BLANK')
         else:
@@ -72,4 +75,5 @@ while True:
 video_capture_1.release()
 video_capture_2.release()
 video_capture_3.release()
+
 cv2.destroyAllWindows()

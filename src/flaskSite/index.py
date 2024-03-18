@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, Response, jsonify, redirect, 
 import cv2 as cv2
 import gameData
 
-# Shared thread pointers
+# Shared thread references
 adminRef = None
 gameRef = None
 lockRef = None
@@ -83,7 +83,7 @@ def gen(camID):
                b'Content-Type: image/jpeg\r\n'
                b'\r\n' + data + b'\r\n')
 
-# Convert still strategy diagram to video
+# Convert still aim recomendation to video
 def aimbot_gen():
     while True:
 
@@ -122,7 +122,7 @@ def video(camID):
     else:
         return ""
 
-# Get the positions of darts for skill
+# Get the positions of darts for skill page
 @app.route('/positions', methods=['GET'])
 def positions():
     lockRef.acquire()
@@ -130,7 +130,7 @@ def positions():
     lockRef.release()
     return jsonify(position=dart_pos, score=dart_score)
 
-# Get the score of the most recent dart
+# Get the updated game values after the most recent dart is thrown
 @app.route('/scores', methods=['GET'])
 def scores():
     lockRef.acquire()

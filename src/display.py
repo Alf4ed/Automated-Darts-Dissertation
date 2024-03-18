@@ -12,15 +12,6 @@ def find_angle(xPos, width, fov):
     
     return angle
 
-def find_center_angle(centerPos, width, fov):
-
-    x = centerPos - width/2
-
-    angle = math.atan((2*x*math.tan(math.radians(fov/2)))/(width))
-    angle = math.degrees(angle)
-    
-    return angle
-
 def angle_to_gradient(angle):
 
     if angle == 0:
@@ -61,25 +52,25 @@ def cartesian_to_polar(x, y):
     
     return (r, theta)
 
-def score(r, theta):
-    sectors = [6,13,4,18,1,20,5,12,9,14,11,8,16,7,19,3,17,2,15,10]
-    sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
-    value = str(sectors[sector])
+# def score(r, theta):
+#     sectors = [6,13,4,18,1,20,5,12,9,14,11,8,16,7,19,3,17,2,15,10]
+#     sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
+#     value = str(sectors[sector])
 
-    if 170 < r:
-        return(0, False)
-    elif 162 < r:
-        return(2*int(value), True)
-    elif 107 < r:
-        return(int(value), False)
-    elif 99 < r:
-        return(3*int(value), False)
-    elif 16 < r:
-        return(int(value), False)
-    elif 6.35 < r:
-        return(25, False)
-    else:
-        return(50, True)
+#     if 170 < r:
+#         return(0, False)
+#     elif 162 < r:
+#         return(2*int(value), True)
+#     elif 107 < r:
+#         return(int(value), False)
+#     elif 99 < r:
+#         return(3*int(value), False)
+#     elif 16 < r:
+#         return(int(value), False)
+#     elif 6.35 < r:
+#         return(25, False)
+#     else:
+#         return(50, True)
     
 def score_dart(x, y):
     r, theta = cartesian_to_polar(x, y)
@@ -104,8 +95,10 @@ def score_dart(x, y):
 
 def score_prob(x, y, target, checkout):
 
-    r, theta = cartesian_to_polar(x, y)
-    result, double = score(r, theta)
+    # r, theta = cartesian_to_polar(x, y)
+    # result, double = score(r, theta)
+    dart = score_dart(x, y)
+    result, double = dart.value(), dart.is_double()
 
     if not checkout or double:
         if target == result:
@@ -120,8 +113,7 @@ class Dartboard():
         # Set dimensions and force aspect ratio to be square
         self.ax.set_xlim([-350, 350])
         self.ax.set_ylim([350, -350])
-        # self.ax.set_xlim([-20, 20])
-        # self.ax.set_ylim([20, -20])
+
         self.ax.set_box_aspect(1)
         plt.gca().set_aspect('equal')
 
