@@ -4,6 +4,7 @@ import math
 import cmath
 import gameData
 
+# Returns the angle between the detected point and the center of the image
 def find_angle(xPos, width, fov):
     x = xPos - width/2
 
@@ -140,6 +141,7 @@ class Dartboard():
         # self.addText()
 
     def add_text(self, color='gray'):
+        # Dartboard sectors moving clockwise from the positive x-axis
         sectors = ['10','15','2','17','3','19','7','16','8','11','14','9','12','5','20','1','18','4','13','6']
 
         for i in range(0, 20):
@@ -150,7 +152,6 @@ class Dartboard():
                      verticalalignment='center', fontsize=12, color=color)
     
     def get_fig(self):
-        # plt.axis('off')
         return self.fig
     
     def draw_board(self, cBlack, cRed, cGreen):
@@ -204,7 +205,6 @@ class Dartboard():
         plt.close()
 
     def savefig(self, filename):
-        # plt.axis('off')
         self.fig.savefig(filename, bbox_inches='tight', pad_inches=0, dpi=700, transparent=True)
 
     def draw_point(self, xPos, yPos, color='magenta', marker='x', markersize=1):

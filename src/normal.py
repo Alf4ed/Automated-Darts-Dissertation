@@ -276,44 +276,5 @@ def start_normal(admin, game, lock):
 
         time.sleep(0.5)
 
-if __name__ == "__main__":
-    skill = Normal()
-    x, y = skill.create_kernel(401)
-    # skill.calculate_region_probabilities(x, y)
-    # skill.calculate_checkout_probabilities()
-    # result = skill.optimal_n_darts(47, 6)
-    result = np.fromfunction(np.vectorize(lambda i, j: display.score_prob(i-200, j-200, 6, False)), (400, 400))
-    
-    # kernel = np.outer(x, y)
-    # totals = np.fromfunction(np.vectorize(lambda i, j: display.score_dart(j-200, 200-i).value()), (400, 400))
-    # expected = skill.calculate_expected_score(x, y)
-
-    # x = np.array(x)
-    # x = x.reshape(1, -1)
-
-    x, y = np.meshgrid(np.arange(400), np.arange(400))
-
-    # Calculate distance from center for each point
-    distance_from_center = np.sqrt((x - 200)**2 + (y - 200)**2)
-    
-    mask = distance_from_center > 180
-    # result[mask] = np.nan
-
-    result_masked = np.ma.array(result, mask=mask)
-
-    # Replace masked elements with NaN
-    result_masked = np.where(mask, np.nan, result_masked)
-
-    plt.imshow(result_masked, cmap=newcmp)
-    # max_index = np.unravel_index(np.nanargmax(result), result.shape)
-    # Plot a point at the location of the max value
-    # plt.scatter(max_index[1], max_index[0], color='#E3292E', marker='x')
-    add_text(color='#282C34')
-    draw_radius(color='#282C3455')
-    
-    plt.axis('off')
-    # plt.colorbar()
-    plt.savefig("47", bbox_inches='tight', pad_inches=0, dpi=700, transparent=True)
-
 
 

@@ -8,7 +8,7 @@ from skimage.filters import threshold_otsu, threshold_sauvola, threshold_isodata
 import matplotlib.pyplot as plt
 
 # Camera properties
-fov = 67.5
+fov = 67.1
 cameraWidth = 640
 
 # Center of the board relative to the camera
@@ -36,45 +36,9 @@ def start_detection(admin, game, lock):
         else:
             start_cameras(admin, game, lock)
 
-def process_image(before, after, threshVal):
-    diff = cv2.absdiff(before, after)
-    grayscale = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.medianBlur(grayscale, 3)
-
-    # Normalise
-    # norm_img1 = cv2.normalize(blurred, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    # norm_img1 = (255*norm_img1).astype(np.uint8)
-    norm_img1 = blurred
-
-    # # Thresholding operations
-    ret, thresh = cv2.threshold(norm_img1, threshVal, 255, cv2.THRESH_BINARY)
-    # ret3,otsuCV = cv2.threshold(norm_img1, 200, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-    # triangle = threshold_triangle(norm_img1)
-    # yen = threshold_yen(norm_img1)
-    # li = threshold_li(norm_img1)
-    # min = threshold_minimum(norm_img1)
-    # otsu = threshold_otsu(norm_img1)
-    # isodata = threshold_isodata(norm_img1)
-    # ret, triangle = cv2.threshold(norm_img1, triangle, 255, cv2.THRESH_BINARY)
-    # ret, yen = cv2.threshold(norm_img1, yen, 255, cv2.THRESH_BINARY)
-    # ret, li = cv2.threshold(norm_img1, li, 255, cv2.THRESH_BINARY)
-    # ret, min = cv2.threshold(norm_img1, min, 255, cv2.THRESH_BINARY)
-    # ret, otsu = cv2.threshold(norm_img1, otsu, 255, cv2.THRESH_BINARY)
-    # ret, isodata = cv2.threshold(norm_img1, isodata, 255, cv2.THRESH_BINARY)
-
-    # edges = cv2.Canny(norm_img1,10,200)
-
-    # ret, all = cv2.threshold(all, 101, 255, cv2.THRESH_BINARY)
-
-    # Morphological operations to remove noise
-    kernelOpen = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
-    kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
-    morphological = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
-    final = cv2.morphologyEx(morphological, cv2.MORPH_CLOSE, kernelClose)
-
-    return final
-
+def argNmax(a, N):
+    return np.argpartition(a, -N)
+    
 def find_dart_tip(processedImg):
     # Find the lowest y point of the max size contour
     contours, hierarchy = cv2.findContours(processedImg, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -84,42 +48,48 @@ def find_dart_tip(processedImg):
     if len(contours) == 0:
         val =  0
     else:
-        cnt = max(contours, key = cv2.contourArea)
-        size = cv2.contourArea(cnt)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
-        if size > 1500:
-            val = "Hand"
-        elif size < 100:
-            val =  0
-        else:
-            val =  tuple(cnt[cnt[:, :, 1].argmax()][0])
+        for cnt in contours:
+        # cnt = max(contours, key = cv2.contourArea)
+            size = cv2.contourArea(cnt)
+            x, y, w, h = cv2.boundingRect(cnt)
 
-    # blank = np.zeros(img.shape, dtype=np.uint8)
+            if size > 10000:
+                val = "Hand"
+                break
+            elif size < 50:
+                break
+            elif h < w:
+                break
+            else:
+                potential = tuple(cnt[cnt[:, :, 1].argmax()][0])
 
-    # rows,cols = img.shape[:2]
-    # [vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
-    # lefty = int(((-x*vy/vx) + y)[0])
-    # righty = int((((cols-x)*vy/vx)+y)[0])
-    # cv2.line(blank,(cols-1,righty),(0,lefty),(255,255,255),15)
+                all = cnt[cnt[:, :, 1] >= potential[1]-2]
 
-    # blank = cv2.bitwise_and(blank, final)
-    # y, x = np.nonzero(blank)
-    # y = y[-1]
-    # x = x[-1]
+                potential = np.mean(all, axis=0)
+
+                potential = tuple(np.rint(potential).astype(int))
+
+                if val != 0:
+                    if val[1] < potential[1]:
+                        val = potential
+                else:
+                    val = potential
 
     return val
 
 def start_cameras(admin, game, lock):
     # Use prerecorded camera feeds if cameras are not detected
-    try:
-        video_capture_1 = cv2.VideoCapture(0)
-        video_capture_2 = cv2.VideoCapture(2)
-        video_capture_3 = cv2.VideoCapture(1)
-    except:
+    video_capture_1 = cv2.VideoCapture(0)
+    video_capture_2 = cv2.VideoCapture(2)
+    video_capture_3 = cv2.VideoCapture(1)
+    
+    if not video_capture_1.isOpened() or not video_capture_2.isOpened() or not video_capture_3.isOpened():
         print("Cameras are not connected. Using video feeds from file.")
-        video_capture_1 = cv2.VideoCapture('TBoutputA.avi')
-        video_capture_2 = cv2.VideoCapture('TBoutputC.avi')
-        video_capture_3 = cv2.VideoCapture('TBoutputB.avi')
+        video_capture_1 = cv2.VideoCapture('../data/videos/outputA.avi')
+        video_capture_2 = cv2.VideoCapture('../data/videos/outputC.avi')
+        video_capture_3 = cv2.VideoCapture('../data/videos/outputB.avi')
 
     oldFrameA = None
     oldFrameB = None
@@ -141,9 +111,13 @@ def start_cameras(admin, game, lock):
         lock.release()
 
         # Capture frame-by-frame
-        _, frame1 = video_capture_1.read()
-        _, frame2 = video_capture_2.read()
-        _, frame3 = video_capture_3.read()
+        ret1, frame1 = video_capture_1.read()
+        ret2, frame2 = video_capture_2.read()
+        ret3, frame3 = video_capture_3.read()
+
+        # Break and loop video feeds if not connected to live cameras
+        if not ret1 or not ret2 or not ret3:
+            break
 
         # Resize the images to reduce computational complexity
         resFrame1 = cv2.resize(frame1, (resizeWidth, resizeHeight))
@@ -175,9 +149,9 @@ def start_cameras(admin, game, lock):
         
         elif mode == gameData.CameraMode.POSITIONING or mode == gameData.CameraMode.GAME:
             if oldFrameA is not None:
-                processedImageA, threshA = test_process_image(oldFrameA, croppedFrame1, 15)
-                processedImageB, threshB = test_process_image(oldFrameB, croppedFrame2, 15)
-                processedImageC, threshC = test_process_image(oldFrameC, croppedFrame3, 15)
+                processedImageA, threshA = process_image(oldFrameA, croppedFrame1, 15)
+                processedImageB, threshB = process_image(oldFrameB, croppedFrame2, 15)
+                processedImageC, threshC = process_image(oldFrameC, croppedFrame3, 15)
 
                 aX = find_dart_tip(processedImageA)
                 bX = find_dart_tip(processedImageB)
@@ -236,112 +210,51 @@ def start_cameras(admin, game, lock):
 
         # Limit processing to 2 FPS
         # time.sleep(0.5)
-        cv2.waitKey(250)
+        cv2.waitKey(1)
 
     # When everything is done, release the capture
     video_capture_1.release()
     video_capture_2.release()
     video_capture_3.release()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def test_process_image(before, after, thresh_val):
+def create_difference(before, after):
     diff = cv2.absdiff(before, after)
     grayscale = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.medianBlur(grayscale, 3)
+    blurred = cv2.medianBlur(grayscale, 5)
 
-    # Normalise
-    # norm_img1 = cv2.normalize(blurred, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    # norm_img1 = (255*norm_img1).astype(np.uint8)
-    norm_img1 = blurred
+    return blurred
+
+def process_image(before, after, thresh_val):
+    blurred = create_difference(before, after)
 
     thresh = None
 
-    # if option == 1:
-    #     ret, thresh = cv2.threshold(norm_img1, 25, 255, cv2.THRESH_BINARY)
-    # elif option == 2:
-    #     triangle = threshold_triangle(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, triangle, 255, cv2.THRESH_BINARY)
-    # elif option == 3:
-    #     yen = threshold_yen(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, yen, 255, cv2.THRESH_BINARY)
-    # elif option == 4:
-    #     li = threshold_li(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, li, 255, cv2.THRESH_BINARY)
-    # elif option == 5:
-    #     otsu = threshold_otsu(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, otsu, 255, cv2.THRESH_BINARY)
-    # elif option == 6:
-    #     isodata = threshold_isodata(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, isodata, 255, cv2.THRESH_BINARY)
-    # elif option == 7:
-    #     mean = threshold_mean(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, mean, 255, cv2.THRESH_BINARY)
-    # elif option == 8:
-    #     local = threshold_local(norm_img1)
-    #     ret, thresh = cv2.threshold(norm_img1, local, 255, cv2.THRESH_BINARY)
+    can = cv2.Canny(blurred, 30, 90)
+    triangle = threshold_triangle(blurred)
+    _, triangle = cv2.threshold(blurred, triangle, 255, cv2.THRESH_BINARY)
+    yen = threshold_yen(blurred)
+    _, yen = cv2.threshold(blurred, yen, 255, cv2.THRESH_BINARY)
+    li = threshold_li(blurred)
+    _, li = cv2.threshold(blurred, li, 255, cv2.THRESH_BINARY)
 
-    # final = thresh
-
-    triangle = threshold_triangle(norm_img1)
-    ret, triangle = cv2.threshold(norm_img1, triangle, 255, cv2.THRESH_BINARY)
-    yen = threshold_yen(norm_img1)
-    ret, yen = cv2.threshold(norm_img1, yen, 255, cv2.THRESH_BINARY)
-    li = threshold_li(norm_img1)
-    ret, li = cv2.threshold(norm_img1, li, 255, cv2.THRESH_BINARY)
-
-    combined = (triangle/2)+(yen/2)
+    combined = (triangle/3)+(yen/3)+(li/3)
     combined = cv2.convertScaleAbs(combined)
-    ret, all = cv2.threshold(combined, 150, 255, cv2.THRESH_BINARY)
-
-    thresh = all
     
-    # edges = cv2.Canny(norm_img1,10,200)
-    # ret, all = cv2.threshold(all, 101, 255, cv2.THRESH_BINARY)
+    ret, all = cv2.threshold(combined, 150, 255, cv2.THRESH_BINARY)
 
     # Morphological operations to remove noise
     kernelOpen = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
     kernelClose = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,5))
-    morphological = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
+    morphological = cv2.morphologyEx(all, cv2.MORPH_OPEN, kernelOpen)
     final = cv2.morphologyEx(morphological, cv2.MORPH_CLOSE, kernelClose)
 
-    # cv2.imwrite("im_before.jpg", before) 
-    # cv2.imwrite("im_after.jpg", after)
-    # cv2.imwrite("im_difference.jpg", diff)
-    # cv2.imwrite("im_grayscale.jpg", grayscale) 
-    # cv2.imwrite("im_blurred.jpg", blurred) 
-    # cv2.imwrite("im_triangle.jpg", triangle) 
-    # cv2.imwrite("im_yen.jpg", yen) 
-    # cv2.imwrite("im_combined.jpg", all) 
-    # cv2.imwrite("im_morphological.jpg", morphological) 
-    # cv2.imwrite("im_final.jpg", final)
-
-    # out = input("HI")
-
-    ret, thresh = cv2.threshold(norm_img1, thresh_val, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(blurred, thresh_val, 255, cv2.THRESH_BINARY)
     thresh_morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernelOpen)
     thresh_final = cv2.morphologyEx(thresh_morph, cv2.MORPH_CLOSE, kernelClose)
 
+    # Combine thresholded image with Canny edge detector
+    final = final | can
+    
     return final, thresh_final
 
 def test(mode):
@@ -395,9 +308,9 @@ def test(mode):
         croppedFrame3 = resFrame3[croppedHeight:resizeHeight, 0:resizeWidth]
 
         if oldFrameA is not None:
-            processedImageA = test_process_image(oldFrameA, croppedFrame1, mode)
-            processedImageB = test_process_image(oldFrameB, croppedFrame2, mode)
-            processedImageC = test_process_image(oldFrameC, croppedFrame3, mode)
+            processedImageA = process_image(oldFrameA, croppedFrame1, mode)
+            processedImageB = process_image(oldFrameB, croppedFrame2, mode)
+            processedImageC = process_image(oldFrameC, croppedFrame3, mode)
 
             aX = find_dart_tip(processedImageA)
             bX = find_dart_tip(processedImageB)
