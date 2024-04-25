@@ -76,7 +76,7 @@ class Turn:
             return False
         
         return len(self.darts) >= 3 or self.darts[-1].is_bust()
-    
+
 class Leg:
     def __init__(self, players, current_player):
         self.current_turn = Turn(players[current_player])
@@ -140,6 +140,8 @@ class Player:
     def reset(self):
         self.score = self.format
 
+# Game class stores information about the current game being played between two players
+# The Front-end and Back-end use a shared Game class object to interface
 class Game:
     def __init__(self):
         self.positions = []

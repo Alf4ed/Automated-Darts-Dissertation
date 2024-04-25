@@ -4,7 +4,7 @@ import math
 import numpy as np
 import gameData
 import display
-from skimage.filters import threshold_otsu, threshold_sauvola, threshold_isodata, threshold_li, threshold_local, threshold_mean, threshold_minimum, threshold_niblack, threshold_triangle, threshold_yen
+from skimage.filters import threshold_li, threshold_triangle, threshold_yen
 import matplotlib.pyplot as plt
 
 # Camera properties
@@ -153,9 +153,12 @@ def start_cameras(admin, game, lock):
                 processedImageB, threshB = process_image(oldFrameB, croppedFrame2, 15)
                 processedImageC, threshC = process_image(oldFrameC, croppedFrame3, 15)
 
+                # Results in innacurate dart tip locations, but accurately detects the presence of a dart
                 aX = find_dart_tip(processedImageA)
                 bX = find_dart_tip(processedImageB)
                 cX = find_dart_tip(processedImageC)
+
+                # Accurately detects dart tip locations, but results in false positives
                 existsA = find_dart_tip(threshA)
                 existsB = find_dart_tip(threshB)
                 existsC = find_dart_tip(threshC)
@@ -165,6 +168,7 @@ def start_cameras(admin, game, lock):
                 elif detectAgain == False:
                     detectAgain = True
                 elif detectAgain == True:
+                    # If hands are detected, then clear the board of darts
                     if existsA == "Hand" or existsB == "Hand" or existsC == "Hand":
                         lock.acquire()
                         if mode == gameData.CameraMode.GAME:
@@ -229,6 +233,7 @@ def process_image(before, after, thresh_val):
 
     thresh = None
 
+    # Combination of three thresholding methods
     can = cv2.Canny(blurred, 30, 90)
     triangle = threshold_triangle(blurred)
     _, triangle = cv2.threshold(blurred, triangle, 255, cv2.THRESH_BINARY)
@@ -239,7 +244,6 @@ def process_image(before, after, thresh_val):
 
     combined = (triangle/3)+(yen/3)+(li/3)
     combined = cv2.convertScaleAbs(combined)
-    
     ret, all = cv2.threshold(combined, 150, 255, cv2.THRESH_BINARY)
 
     # Morphological operations to remove noise
@@ -256,6 +260,22 @@ def process_image(before, after, thresh_val):
     final = final | can
     
     return final, thresh_final
+
+def weightedAverage(pointA, pointB, pointC):
+    ab = 1/math.dist(pointA, pointB)
+    ac = 1/math.dist(pointA, pointC)
+    bc = 1/math.dist(pointB, pointC)
+
+    total = ab*ac + ab*bc + ac*bc
+
+    aWeight = ab*ac/total
+    bWeight = ab*bc/total
+    cWeight = ac*bc/total
+
+    x = pointA[0]*aWeight + pointB[0]*bWeight + pointC[0]*cWeight
+    y = pointA[1]*aWeight + pointB[1]*bWeight + pointC[1]*cWeight
+
+    return x, y
 
 def test(mode):
     video_capture_1 = cv2.VideoCapture('AllA.avi')

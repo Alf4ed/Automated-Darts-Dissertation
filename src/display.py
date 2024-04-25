@@ -52,26 +52,6 @@ def cartesian_to_polar(x, y):
     theta += -math.pi/2
     
     return (r, theta)
-
-# def score(r, theta):
-#     sectors = [6,13,4,18,1,20,5,12,9,14,11,8,16,7,19,3,17,2,15,10]
-#     sector = math.floor(((theta)/(2*math.pi))*20 + 1/2)
-#     value = str(sectors[sector])
-
-#     if 170 < r:
-#         return(0, False)
-#     elif 162 < r:
-#         return(2*int(value), True)
-#     elif 107 < r:
-#         return(int(value), False)
-#     elif 99 < r:
-#         return(3*int(value), False)
-#     elif 16 < r:
-#         return(int(value), False)
-#     elif 6.35 < r:
-#         return(25, False)
-#     else:
-#         return(50, True)
     
 def score_dart(x, y):
     r, theta = cartesian_to_polar(x, y)
